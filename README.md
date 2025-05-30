@@ -32,7 +32,7 @@
 ## 🛠️ Tech Stack
 | Layer          | Technology               |
 |----------------|--------------------------|
-| **Frontend**   | Reactjs                  |
+| **Frontend**   | HTML + CSS               |
 | **Backend**    | Node.js + Express        |
 | **Database**   | MySQL                    |
 | **Auth**       | JWT Tokens               |
