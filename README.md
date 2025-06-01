@@ -76,7 +76,7 @@ git clone https://github.com/amooraheemat/Custom-Dining.git
    ```
 5. Start the development server:
    ```bash
-   npm run dev
+   node src/app.js
    ```
 
 
