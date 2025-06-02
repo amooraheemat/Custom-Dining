@@ -3,7 +3,10 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const sequelize = new Sequelize(
+const sequelize = new Sequelize('meal_db', 'root', 'your_password', {
+  host: 'localhost',
+  dialect: 'mysql',
+},
   process.env.DB_NAME,
   process.env.DB_USER,
   process.env.DB_PASS,

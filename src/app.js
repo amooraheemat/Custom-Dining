@@ -6,7 +6,7 @@ import { specs } from './config/swagger.js';
 import { connectDB } from './config/database.js';
 import authRoutes from './routes/authRoutes.js';
 // import restaurantRoutes from './routes/restaurantRoutes.js';
-// import mealRoutes from './routes/mealRoutes.js';
+import mealRoutes from './routes/mealRoutes.js';
 // import userRoutes from './routes/userRoutes.js';
 import errorHandler from './middleware/errorHandler.js';
 
@@ -19,6 +19,7 @@ const app = express();
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use('/api/meals', mealRoutes);
 app.use(express.urlencoded({ extended: true }));
 
 // Serve static files from uploads directory
