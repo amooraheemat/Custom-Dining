@@ -13,9 +13,10 @@
   "license": "ISC",
   "author": "Group 11 Backend Engineers",
   "type": "module",
-  "start": "node src/app.js",
+  
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node src/app.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
