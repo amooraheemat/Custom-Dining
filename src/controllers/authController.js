@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import User from '../models/user.js';
+import { sendResetPasswordEmail } from '../services/emailService.js';
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -26,8 +27,10 @@ export const register = async (req, res, next) => {
     res.status(201).json({
       status: 'success',
       data: {
-        user,
-        token
+        userDetails:{
+            username: user.username,
+            email: user.email
+        }
       }
     });
   } catch (error) {
@@ -67,8 +70,8 @@ export const login = async (req, res, next) => {
     res.json({
       status: 'success',
       data: {
-        user,
-        token
+        Email: user.email,
+        Username: user.usernam
       }
     });
   } catch (error) {
@@ -98,7 +101,23 @@ export const forgotPassword = async (req, res, next) => {
 
     await user.save();
 
-    
+    try {
+      await sendResetPasswordEmail(user.email, resetToken);
+
+      res.json({
+        status: 'success',
+        message: 'Reset token sent to email'
+      });
+    } catch (error) {
+      user.resetPasswordToken = null;
+      user.resetPasswordExpires = null;
+      await user.save();
+
+      return res.status(500).json({
+        status: 'error',
+        message: 'Error sending email. Please try again later.'
+      });
+    }
   } catch (error) {
     next(error);
   }
