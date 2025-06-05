@@ -13,7 +13,7 @@
   "license": "ISC",
   "author": "Group 11 Backend Engineers",
   "type": "module",
-  "main": "src/app.js",
+  "start": "node src/app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
