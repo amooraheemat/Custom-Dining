@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import swaggerUi from 'swagger-ui-express';
 import { specs } from './config/swagger.js';
 import { connectDB } from './config/database.js';
+import sequelize from './config/database.js';
 import authRoutes from './routes/authRoutes.js';
 // import restaurantRoutes from './routes/restaurantRoutes.js';
 // import mealRoutes from './routes/mealRoutes.js';
@@ -62,5 +63,10 @@ const startServer = async () => {
     process.exit(1);
   }
 };
+
+
+sequelize.sync({ alter: true }) // or { force: true } to drop & recreate
+  .then(() => console.log("Database synced"))
+  .catch(err => console.error("Sync failed", err));
 
 startServer();
