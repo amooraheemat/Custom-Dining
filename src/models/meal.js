@@ -1,34 +1,56 @@
+import  Sequelize  from '../config/database.js';
 import { DataTypes, GEOMETRY } from 'sequelize';
-import { sequelize } from '../config/database';
+import { Json } from 'sequelize/lib/utils';
 import { generateHTML } from 'swagger-ui-express';
 
-const meal = sequelize.define('Meal', {
+const meal = Sequelize.define('Meal', {
     name: {
         type: DataTypes.STRING,
         allowNull: false,
     },
-    description: DataTypes.TEXT,
-    tags: {
-        type: DataTypes.STRING, // store as comma-separated string
+    description: { 
+        type: DataTypes.TEXT,
+        allowNull: false,
+    },  
+    
+    /*Dietary Tags: Stored as comma-separated string for simplicity or JSON array
+     For more complex querying/indexing, a separate Tag model and many-to-many would be better.
+     For this functional solution, string array is sufficient. */
+    dietaryTags: {
+        type: DataTypes.JSON, // Use JSON type for better flexibility with arrays
+        allowNull: true,
+        defaultValue: [],
         get() {
-            return this.getDataValue('tags')?.split(',') || [];    
+            return this.getDataValue('dietaryTags')?.split(',') || [];    
         },
         set(val) {
-            this.setDataValue('tags', val.join(','));
-        },
-     },
+            this.setDataValue('dietaryTags', JSON,strigify(val));
+        }
+     }, 
 
+     // Nutritional Info: Stored as JSON
      nutritionalInfo: {
         type: DataTypes.JSON, // optional: store protein, fat, etc. as JSON
-     },
+        allowNull: true,
+        defaultValue: {},
+        get() {
+            return this.getDataValue('nutritionallnfo');
+        },
+        set(val) {
+            this.setDataValue('nutritionallnfo', JSON.stringify(val));
+        }
+    },
+
+    // Allergens: Stored as a JSON array of strings
      allergens: {
-        type: DataTypes.STRING, //Also comma-separated
+        type: DataTypes.JSON, // Use JSON type for better flexibility with arrays
+
         get() {
             return thise.getDataValue('allergens')?.split(',') || []; 
         },
         set(val) {
-            this.setDataValue('allergens', val.join(','));
-        },
+            this.setDataValue('allergens', JSON.stringify(val));
+        }
      },
 });
 

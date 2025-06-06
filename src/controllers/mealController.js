@@ -1,7 +1,7 @@
 import { Op } from 'sequelize';
-import { meal } from '../models/meal.js';
+import meal from '../models/meal.js';
 
-exports.getFilteredMeals = async (req, res) => {
+getFilteredMeals = async (req, res) => {
     try {
 
         const { tags, exclude } = req.query;
@@ -37,3 +37,5 @@ exports.getFilteredMeals = async (req, res) => {
         res.status(500).json({ error: 'something went wrong!' });
     }
 };
+
+export default mealController;
