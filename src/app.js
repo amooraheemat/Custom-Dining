@@ -5,9 +5,9 @@ import swaggerUi from 'swagger-ui-express';
 import { specs } from './config/swagger.js';
 import { connectDB } from './config/database.js';
 import authRoutes from './routes/authRoutes.js';
-// import restaurantRoutes from './routes/restaurantRoutes.js';
+import restaurantRoutes from './routes/restaurantRoutes.js';
 import mealRoutes from './routes/mealRoutes.js';
-// import userRoutes from './routes/userRoutes.js';
+import userRoutes from './routes/userRoutes.js';
 import errorHandler from './middleware/errorHandler.js';
 
 // Load environment variables
@@ -30,7 +30,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, { explorer: true })
 
 // Routes
 app.use('/api/auth', authRoutes);
-// app.use('/api/restaurants', restaurantRoutes);
+app.use('/api/restaurants', restaurantRoutes);
 // app.use('/api/meals', mealRoutes);
 // app.use('/api/users', userRoutes);
 
