@@ -4,12 +4,12 @@ import dotenv from 'dotenv';
 dotenv.config(); // Load environment variables
 
 const sequelize = new Sequelize(
-  process.env.DB_NAME || 'custom_dining_db',
-  process.env.DB_USER || 'root',
-  process.env.DB_PASS || 'Your_password',
+  process.env.DB_NAME,
+  process.env.DB_USER,
+  process.env.DB_PASS,
   {
-    host: process.env.DB_HOST || 'localhost',
-    dialect: process.env.DB_DIALECT || 'mysql',
+    host: process.env.DB_HOST,
+    dialect: process.env.DB_DIALECT,
     logging: process.env.NODE_ENV === 'development' ? console.log : false,
     define: {
       timestamps: true,
