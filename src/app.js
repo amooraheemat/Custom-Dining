@@ -3,9 +3,11 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import swaggerUi from 'swagger-ui-express';
 import { specs } from './config/swagger.js';
-import { connectDB } from './config/database.js';
+import { connectDB, sequelize } from './config/database.js';
 import authRoutes from './routes/authRoutes.js';
 import restaurantRoutes from './routes/restaurantRoutes.js';
+// import mealRoutes from './routes/mealRoutes.js';
+// import restaurantRoutes from './routes/restaurantRoutes.js';
 // import mealRoutes from './routes/mealRoutes.js';
 // import userRoutes from './routes/userRoutes.js';
 import errorHandler from './middleware/errorHandler.js';
@@ -17,9 +19,10 @@ dotenv.config();
 const app = express();
 
 // Middleware
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(cors()); // Enable CORS for all origins (for development)
+app.use(express.json()); // Parses incoming JSON requests
+// app.use('/api/meals', mealRoutes);
+app.use(express.urlencoded({ extended: true }));// Parses URL -encoded requests
 
 // Serve static files from uploads directory
 app.use('/uploads', express.static('uploads'));
@@ -33,6 +36,11 @@ app.use('/api/restaurants', restaurantRoutes);
 // app.use('/api/meals', mealRoutes);
 // app.use('/api/users', userRoutes);
 
+// Basic function check route
+// app.get('/', (req, res) => {
+//   res.status(200).json({ message: 'Dietary API is running!'});
+// });
+
 // Error handling
 app.use(errorHandler);
 
@@ -45,16 +53,16 @@ app.use((req, res) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 3006;
+const PORT = process.env.PORT || 3306;
 
 const startServer = async () => {
   try {
-    // Connect to database
+    // Connect to database before starting the server
     await connectDB();
 
     // Start listening
     app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+      console.log(`Server running at http://localhost:${PORT}`);
       console.log(`Swagger documentation available at http://localhost:${PORT}/api-docs`);
     });
   } catch (error) {
@@ -62,5 +70,10 @@ const startServer = async () => {
     process.exit(1);
   }
 };
+
+
+sequelize.sync({ alter: true }) // or { force: true } to drop & recreate
+  .then(() => console.log("Database synced"))
+  .catch(err => console.error("Sync failed", err));
 
 startServer();
