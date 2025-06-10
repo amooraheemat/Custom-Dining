@@ -1,4 +1,4 @@
-import Restaurant from "../models/restaurant";
+import Restaurant from "../models/restaurant.js";
 
 //create a new restaurant
 export const createRestaurant = async (req, res) => {

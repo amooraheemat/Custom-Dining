@@ -1,9 +1,9 @@
 import express from 'express';
-import { getRestaurants, getRestaurantById, createRestaurant } from '../controllers/restaurantController.js';
+import { getAllRestaurants, getRestaurantById, createRestaurant } from '../controllers/restaurantController.js';
 
 const router = express.Router();
 // Route to get all restaurants
-router.get('/', getRestaurants);
+router.get('/', getAllRestaurants);
 // Route to get a restaurant by ID
 router.get('/:id', getRestaurantById);
 // Route to create a new restaurant

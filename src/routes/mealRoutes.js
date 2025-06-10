@@ -1,13 +1,13 @@
 import express from 'express';
 import meal from '../models/meal.js';
-import mealController from '../controllers/mealController.js';
+import { getFilteredMeals, createMeal, getMealById } from '../controllers/mealController.js';
 
 // Express router
 const router = express.Router();
 
-router.get('/', mealController.getFilteredMeals);
+router.get('/', getFilteredMeals);
 
-// GET /api/meals?tags = low-carb, diabetic-friendly&exclude=peanuts
+// GET /api/meals?tags=low-carb,diabetic-friendly&excludeAllergens=peanuts
 router.get('/', async (req, res) => {
     try {
         const { tags, exclude } = req.query;

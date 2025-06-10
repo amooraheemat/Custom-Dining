@@ -1,22 +1,18 @@
-import { Sequelize } from 'sequelize';
+import Sequelize from 'sequelize';
 import dotenv from 'dotenv';
-import meal from '../models/meal.js';
 
-dotenv.config(); // Load Environment variables
+dotenv.config(); // Load environment variables
 
-const sequelize = new Sequelize('meal_db', 'root', 'your_password', {
-  host: 'localhost',
-  dialect: 'mysql',
-},
-  process.env.DB_NAME,
-  process.env.DB_USER,
-  process.env.DB_PASS,
+const sequelize = new Sequelize(
+  process.env.DB_NAME || 'custom_dining_db',
+  process.env.DB_USER || 'root',
+  process.env.DB_PASS || 'Your_password',
   {
-    host: process.env.DB_HOST,
+    host: process.env.DB_HOST || 'localhost',
     dialect: process.env.DB_DIALECT || 'mysql',
-    logging: process.env.NODE_ENV === 'development' ? console.log : false, // Set to true to see SQL queries in console
+    logging: process.env.NODE_ENV === 'development' ? console.log : false,
     define: {
-      timestamps: true,// Adds createdAT and updatedAT columns by default
+      timestamps: true,
     },
     pool: {
       max: 5,
@@ -27,20 +23,19 @@ const sequelize = new Sequelize('meal_db', 'root', 'your_password', {
   }
 );
 
-export const connectDB = async () => {
+const connectDB = async () => {
   try {
     await sequelize.authenticate();
-    console.log('Database connection has been established successfully.');
-    
-    // Sync database in development mode
+    console.log('Database connection established.');
+
     if (process.env.NODE_ENV === 'development') {
-      await sequelize.sync({ alter: true }); // Use { force: true } only for development to drop and recreate tables
-        console.log('Database synchronized successfully.');
+      await sequelize.sync({ alter: true });
+      console.log(' Database synchronized.');
     }
   } catch (error) {
-    console.error('Unable to connect to the database:', error);
-    process.exit(1);// Exit process if DB connection fails
+    console.error('Unable to connect to the database:', error.message);
+    process.exit(1);
   }
 };
 
-export { Sequelize, connectDB };
+export { sequelize, connectDB };
