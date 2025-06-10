@@ -7,9 +7,9 @@ import { connectDB } from './config/database.js';
 import sequelize from './config/database.js';
 import authRoutes from './routes/authRoutes.js';
 import restaurantRoutes from './routes/restaurantRoutes.js';
-// import mealRoutes from './routes/mealRoutes.js';
-// import restaurantRoutes from './routes/restaurantRoutes.js';
 import mealRoutes from './routes/mealRoutes.js';
+// import restaurantRoutes from './routes/restaurantRoutes.js';
+// import mealRoutes from './routes/mealRoutes.js';
 // import userRoutes from './routes/userRoutes.js';
 import errorHandler from './middleware/errorHandler.js';
 
@@ -22,7 +22,7 @@ const app = express();
 // Middleware
 app.use(cors()); // Enable CORS for all origins (for development)
 app.use(express.json()); // Parses incoming JSON requests
-app.use('/api/meals', mealRoutes);
+// app.use('/api/meals', mealRoutes);
 app.use(express.urlencoded({ extended: true }));// Parses URL -encoded requests
 
 // Serve static files from uploads directory
