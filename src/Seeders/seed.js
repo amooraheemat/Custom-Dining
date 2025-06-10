@@ -1,5 +1,5 @@
 import meal from '../models/meal.js';
-import sequelize from '../config/database.js';// Import connectDB to ensure DB is ready
+import { sequelize } from '../config/database.js';// Import connectDB to ensure DB is ready
 import { connectDB } from '../config/database.js';
 
 const seedMeals = async () => {
