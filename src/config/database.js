@@ -1,5 +1,7 @@
 import Sequelize from 'sequelize';
 import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
 
 dotenv.config(); // Load environment variables
 
@@ -21,6 +23,7 @@ const sequelize = new Sequelize(
       idle: 10000
     }
   }
+  
 );
 
 const connectDB = async () => {
