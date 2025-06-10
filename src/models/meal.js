@@ -1,4 +1,4 @@
-import { sequelize }  from '../config/database.js';
+import sequelize  from '../config/database.js';
 import { DataTypes, GEOMETRY } from 'sequelize';
 import { Json } from 'sequelize/lib/utils';
 import { generateHTML } from 'swagger-ui-express';

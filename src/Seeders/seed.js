@@ -1,8 +1,8 @@
 import meal from '../models/meal.js';
-import { connectDB, sequelize } from '../config/database.js';// Import connectDB to ensure DB is ready
+import sequelize from '../config/database.js';// Import connectDB to ensure DB is ready
+import { connectDB } from '../config/database.js';
 
-
-async (seedMeals) => {
+const seedMeals = async () => {
     await connectDB(); // Ensure DB is connected before seeding
 
     try {
