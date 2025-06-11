@@ -25,6 +25,7 @@
     "express-validator": "^7.0.1",
     "jsonwebtoken": "^9.0.0",
     "mysql2": "^3.3.1",
+    "nodemailer": "^7.0.3",
     "sequelize": "^6.31.1",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^4.6.3"
