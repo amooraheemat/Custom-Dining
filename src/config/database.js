@@ -68,18 +68,19 @@ const connectDB = async () => {
     await sequelize.authenticate();
     console.log('Database connection established successfully.');
     
-    // Sync database in development mode
-    if (process.env.NODE_ENV === 'development') {
-      try {
-        // First try with alter: true
-        await sequelize.sync({ alter: true });
-        console.log('Database synced successfully with alter.');
-      } catch (alterError) {
-        console.log('Alter sync failed, trying force sync...');
-        // If alter fails, try with force: true (this will drop and recreate tables)
-        await sequelize.sync({ force: true });
-        console.log('Database synced with force option (tables recreated).');
-      }
+    // Sync database
+    try {
+      // In production, use alter: true to safely update tables
+      // In development, use force: true to recreate tables
+      await sequelize.sync({ 
+        alter: process.env.NODE_ENV === 'production',
+        force: process.env.NODE_ENV === 'development'
+      });
+      
+      console.log(`Database synced successfully (${process.env.NODE_ENV === 'production' ? 'alter' : 'force'} mode).`);
+    } catch (error) {
+      console.error('Error syncing database:', error);
+      throw error;
     }
   } catch (error) {
     console.error('Unable to connect to the database:', error);
