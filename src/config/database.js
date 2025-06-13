@@ -20,7 +20,7 @@ const sequelize = new Sequelize(
   }
 );
 
-// Import model factories
+// Create Models [Tables]
 import createUserModel from '../models/user.js';
 import createRestaurantModel from '../models/restaurant.js';
 

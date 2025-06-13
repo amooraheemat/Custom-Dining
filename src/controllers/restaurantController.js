@@ -90,7 +90,7 @@ export const createRestaurant = async (req, res, next) => {
       });
     }
 
-    // Check if a restaurant with this email already exists (case-insensitive)
+    // Check if a restaurant with this email already exists 
     const existingRestaurant = await req.db.Restaurant.findOne({
       where: req.db.sequelize.where(
         req.db.sequelize.fn('LOWER', req.db.sequelize.col('contactEmail')),
@@ -110,7 +110,7 @@ export const createRestaurant = async (req, res, next) => {
       });
     }
     
-    // Check if user has the right role (restaurant or admin)
+    // Check if user has the right role (Only restaurant and admin user can create restaurants)
     if (!['restaurant', 'admin'].includes(req.user.role)) {
       return res.status(403).json({
         status: 'error',
@@ -131,7 +131,7 @@ export const createRestaurant = async (req, res, next) => {
     // Determine if the requester is an admin
     const isAdmin = currentUser.role === 'admin';
     
-    // For admins, require userId in the request body
+    // For admins, require userId in the request body. This is to ensure that the admin is creating a restaurant for a valid restaunrant user
     let targetUser;
     if (isAdmin) {
       if (!req.body.userId) {
@@ -196,6 +196,7 @@ export const createRestaurant = async (req, res, next) => {
         // Notify the admin who created the restaurant
         await sendRestaurantApprovalEmail(targetUser, newRestaurant);
         
+        //Response body
         return res.status(201).json({
           status: 'success',
           message: 'Restaurant created and approved successfully',
@@ -277,7 +278,7 @@ export const getAllRestaurants = async (req, res, next) => {
       order: [['createdAt', 'DESC']]
     });
     
-    // Transform the response to include only the specified fields
+    // Response body
     const response = {
       status: 'success',
       results: restaurants.length,
@@ -308,7 +309,7 @@ export const getRestaurantById = async (req, res, next) => {
     // Base where condition
     const whereCondition = { id };
     
-    // If not admin, only show approved restaurants
+    // Only show approved restaurants if the user is and ADMIN
     if (!isAdmin) {
       whereCondition.status = 'approved';
       whereCondition.isActive = true;
@@ -339,7 +340,7 @@ export const getRestaurantById = async (req, res, next) => {
       });
     }
     
-    // Transform the response
+    // Response body
     const response = {
       status: 'success',
       data: {
@@ -382,7 +383,7 @@ export const getPendingRestaurants = async (req, res, next) => {
       order: [['createdAt', 'DESC']]
     });
     
-    // Transform the response
+    // Response body
     const response = {
       status: 'success',
       results: restaurants.length,
@@ -423,7 +424,7 @@ export const updateRestaurantStatus = async (req, res, next) => {
       });
     }
     
-    // Check if rejection reason is provided when rejecting
+    // Ensure rejection reason is provided when rejecting
     if (status === 'rejected' && !rejectionReason) {
       return res.status(400).json({
         status: 'error',
@@ -457,7 +458,7 @@ export const updateRestaurantStatus = async (req, res, next) => {
       });
     }
 
-    // Update the restaurant
+    // Update the restaurant table
     restaurant.status = status;
     restaurant.approvedBy = req.user.id;
     restaurant.approvedByUsername = req.user.username;
@@ -514,7 +515,7 @@ export const updateRestaurantStatus = async (req, res, next) => {
       }
     }
 
-    // Return success response
+    // Response body
     res.status(200).json({
       status: 'success',
       message: `Restaurant ${status} successfully`,
@@ -556,5 +557,3 @@ export const updateRestaurantStatus = async (req, res, next) => {
     next(error);
   }
 };
-
-// ... (rest of the code remains the same)

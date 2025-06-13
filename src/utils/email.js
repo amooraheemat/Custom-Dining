@@ -23,10 +23,12 @@ class Email {
     if (process.env.NODE_ENV === 'production') {
       // Use SendGrid in production
       return nodemailer.createTransport({
-        service: 'SendGrid',
+        host: 'smtp.gmail.com',
+        port: 465,
+        secure: true, // true for 465, false for other ports
         auth: {
-          user: 'apikey',
-          pass: process.env.SENDGRID_API_KEY
+          user: process.env.EMAIL_USERNAME,
+          pass: process.env.EMAIL_PASSWORD,
         }
       });
     }

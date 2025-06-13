@@ -43,12 +43,14 @@ const validatePassword = (password) => {
   };
 };
 
+// Generate token
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRATION
   });
 };
 
+// Register
 export const register = async (req, res, next) => {
   try {
     const { username, email, password, role } = req.body;
@@ -154,6 +156,7 @@ export const register = async (req, res, next) => {
   }
 };
 
+// Login
 export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -204,6 +207,7 @@ export const login = async (req, res, next) => {
   }
 };
 
+// Verify email
 export const verifyEmail = async (req, res, next) => {
   try {
     const { token } = req.params;
@@ -250,6 +254,7 @@ export const verifyEmail = async (req, res, next) => {
   }
 };
 
+// Resend verification email
 export const resendVerificationEmail = async (req, res, next) => {
   try {
     const { email } = req.body;
@@ -299,6 +304,7 @@ export const resendVerificationEmail = async (req, res, next) => {
   }
 };
 
+// Forgot password
 export const forgotPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
@@ -344,6 +350,7 @@ export const forgotPassword = async (req, res, next) => {
   }
 };
 
+// Reset password
 export const resetPassword = async (req, res, next) => {
   try {
     console.log('Reset password request received');
@@ -442,6 +449,7 @@ export const resetPassword = async (req, res, next) => {
   }
 };
 
+// Change password
 export const changePassword = async (req, res, next) => {
   try {
     const { currentPassword, newPassword } = req.body;
