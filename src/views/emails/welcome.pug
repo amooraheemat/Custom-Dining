@@ -1,0 +1,19 @@
+doctype html
+html
+  head
+    style.
+      body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
+      .button { display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+      .footer { margin-top: 30px; font-size: 12px; color: #777; }
+  body
+    h2 Welcome to Custom Dining, #{firstName}!
+    p Thank you for signing up. We're excited to have you on board.
+    p Please verify your email address by clicking the button below:
+    p
+      a(href=`${url}`, class='button') Verify Email Address
+    p Or copy and paste this link into your browser:
+    p(style='word-break: break-all;') #{url}
+    p If you didn't create an account, please ignore this email.
+    .footer
+      p Best regards,
+      p The Custom Dining Team

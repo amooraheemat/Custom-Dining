@@ -1,86 +1,91 @@
 
-# 🍽️ Custom Dining - Health-Focused Restaurant Companion
+# Custom Dining - Restaurant Finder App
 
-**Empowering Nigerians with dietary restrictions to dine out safely and confidently.**
+A simple web application to help people find restaurants that cater to specific dietary needs.
 
-
-[![Postman](https://img.shields.io/badge/API-Postman-orange)](https://www.postman.com/)
-[![Figma](https://img.shields.io/badge/Design-Figma-purple)](https://figma.com/)
+## Table of Contents
+- [Features](#features)
+- [Technologies Used](#technologies-used)
+- [Setup Instructions](#setup-instructions)
+- [How to Run](#how-to-run)
+- [Project Structure](#project-structure)
 
 ## Features
 
-- User Authentication & Authorization
-- Restaurant Management
-- Meal Management
-- Dietary Preferences
-- Favorites System
-- Admin Controls
+- User registration and login
+- View list of restaurants
+- Search for restaurants by name or cuisine
+- View restaurant details and menu
+- User reviews and ratings
+- Simple admin panel to manage restaurants
 
-## 📌 Table of Contents
-- [Features](#-features)
-- [Tech Stack](#-tech-stack)
-- [Installation](#-installation)
-- [API Documentation](#-api-documentation)
-- [Project Structure](#-project-structure)
-- [Team](#-team)
-- [License](#-license)
+## Technologies Used
 
-## 🌟 Features
-### For Users:
-- Personalized meal recommendations (Diabetic/Weight Loss/Health-Conscious)
-- Nigerian restaurant directory with dietary filters
-- Save favorite meals
+- **Frontend**: HTML, CSS, JavaScript
+- **Backend**: Node.js, Express
+- **Database**: MySQL
+- **Authentication**: JWT (JSON Web Tokens)
+- **Other**: bcrypt for password hashing, express-validator for input validation
 
-### For Restaurants:
-- Register and list health-friendly meals
-- Get visibility from targeted customers
+## Setup Instructions
 
-### For Admin:
-- Approve/reject restaurant submissions
-- Manage meal tags
+1. Make sure you have Node.js installed (download from [nodejs.org](https://nodejs.org/))
+2. Install MySQL if you don't have it already
+3. Clone this repository
+4. Install the required packages by running `npm install`
 
-## 🛠️ Tech Stack
-| Layer          | Technology               |
-|----------------|--------------------------|
-| **Frontend**   | Reactjs                  |
-| **Backend**    | Node.js + Express        |
-| **Database**   | MySQL                    |
-| **Auth**       | JWT Tokens               |
-| **Designer**   | Figma                    |
+## How to Run
 
-## Prerequisites
-
-- Node.js (v14 or higher)
-- MySQL (v8 or higher)
-- npm or yarn
-
-## 🚀 Installation
-### Backend Setup
-```bash
-# Clone repo
-cd backend
-
-1. Clone the repository
-git clone https://github.com/amooraheemat/Custom-Dining.git
-2. Install dependencies:
-   ```bash
-   npm install
+1. Create a `.env` file in the root directory with these variables:
    ```
-3. Copy `.env.example` to `.env` and update the values:
-   ```bash
-   cp .env.example .env
-   ```
-4. Create the MySQL database:
-   ```sql
-   CREATE DATABASE custom_dining_db;
-   ```
-5. Start the development server:
-   ```bash
-   node src/app.js
+   DB_HOST=localhost
+   DB_USER=your_username
+   DB_PASS=your_password
+   DB_NAME=restaurant_db
+   JWT_SECRET=your_jwt_secret
+   PORT=3000
    ```
 
+2. Start the MySQL server
 
+3. Run the application:
+   ```
+   node app.js
+   ```
 
-# Custom Dining API
+4. Open your browser and go to `http://localhost:3000`
 
-A RESTful API for dietary-specific restaurant discovery and meal management.
+## Project Structure
+
+```
+/
+├── config/           # Database configuration
+├── controllers/      # Request handlers
+├── middleware/       # Custom middleware
+├── models/          # Database models
+├── public/          # Static files
+├── routes/          # Route definitions
+├── uploads/         # File uploads
+├── views/           # Template files
+├── app.js           # Main application file
+└── package.json     # Project dependencies
+```
+
+## How It Works
+
+1. Users can sign up and log in
+2. Browse restaurants by category or search by name
+3. View restaurant details and menu items
+4. Leave reviews and ratings
+5. Admins can add/edit/delete restaurants and menu items
+
+## Future Improvements
+
+- Add user profiles
+- Implement restaurant reservations
+- Add payment integration
+- Improve the user interface
+
+## Note for Instructor
+
+This project was developed as part of my learning journey with Node.js and Express. I've tried to keep the code simple and easy to understand.

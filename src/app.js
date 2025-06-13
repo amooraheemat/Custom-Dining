@@ -1,16 +1,19 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
+import { createRequire } from 'module';
+import { fileURLToPath } from 'url';
+import path from 'path';
+import { connectDB } from './config/database.js';
 import { specs } from './config/swagger.js';
-import { connectDB, sequelize } from './config/database.js';
 import authRoutes from './routes/authRoutes.js';
 import restaurantRoutes from './routes/restaurantRoutes.js';
-// import mealRoutes from './routes/mealRoutes.js';
-// import restaurantRoutes from './routes/restaurantRoutes.js';
-// import mealRoutes from './routes/mealRoutes.js';
-// import userRoutes from './routes/userRoutes.js';
-import errorHandler from './middleware/errorHandler.js';
+
+const require = createRequire(import.meta.url);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Load environment variables
 dotenv.config();
@@ -18,62 +21,94 @@ dotenv.config();
 // Create Express app
 const app = express();
 
-// Middleware
-app.use(cors()); // Enable CORS for all origins (for development)
-app.use(express.json()); // Parses incoming JSON requests
-// app.use('/api/meals', mealRoutes);
-app.use(express.urlencoded({ extended: true }));// Parses URL -encoded requests
+// Basic middleware
+app.use(cors()); // Enable CORS for all routes
+app.use(express.json()); // Parse JSON request bodies
+app.use(express.urlencoded({ extended: true })); // Parse URL-encoded request bodies
+app.use(cookieParser()); // Parse cookies
 
-// Serve static files from uploads directory
-app.use('/uploads', express.static('uploads'));
+// Simple request logging
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  next();
+});
 
-// Swagger Documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, { explorer: true }));
+// API Documentation
+const swaggerOptions = {
+  explorer: true,
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: 'Custom Dining API',
+  customfavIcon: '/favicon.ico',
+  swaggerOptions: {
+    url: '/api-docs.json',
+    validatorUrl: null,
+    defaultModelsExpandDepth: -1,
+    defaultModelExpandDepth: 5,
+    docExpansion: 'list',
+    persistAuthorization: true,
+    operationsSorter: 'method',
+    tagsSorter: 'alpha',
+  }
+};
 
-// Routes
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, swaggerOptions));
+
+// API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/restaurants', restaurantRoutes);
-// app.use('/api/meals', mealRoutes);
-// app.use('/api/users', userRoutes);
 
-// Basic function check route
-// app.get('/', (req, res) => {
-//   res.status(200).json({ message: 'Dietary API is running!'});
-// });
+// Serve API spec
+app.get('/api-docs.json', (req, res) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(specs);
+});
 
-// Error handling
-app.use(errorHandler);
-
-// Handle 404
+// 404 handler - must be after all other routes
 app.use((req, res) => {
-  res.status(404).json({
+  res.status(404).json({ 
     status: 'error',
-    message: 'Route not found'
+    error: 'Route not found',
+    path: req.originalUrl,
+    method: req.method
+  });
+});
+
+// Handle 405 Method Not Allowed - must be after all routes but before error handler
+app.use((err, req, res, next) => {
+  if (err.status === 405) {
+    return res.status(405).json({
+      status: 'error',
+      message: `The ${req.method} method is not allowed.`
+    });
+  }
+  next(err);
+});
+
+// Error handler
+app.use((err, req, res, next) => {
+  console.error('Error:', err);
+  res.status(err.status || 500).json({
+    status: 'error',
+    message: err.message || 'Internal Server Error',
+    ...(process.env.NODE_ENV === 'development' && { stack: err.stack })
   });
 });
 
 // Start server
-const PORT = process.env.PORT || 3306;
+const PORT = process.env.PORT || 3000;
 
 const startServer = async () => {
   try {
-    // Connect to database before starting the server
     await connectDB();
-
-    // Start listening
     app.listen(PORT, () => {
-      console.log(`Server running at http://localhost:${PORT}`);
-      console.log(`Swagger documentation available at http://localhost:${PORT}/api-docs`);
+      console.log(`Server is running on http://localhost:${PORT}`);
     });
-  } catch (error) {
-    console.error('Failed to start server:', error);
+  } catch (err) {
+    console.error('Failed to start server:', err);
     process.exit(1);
   }
 };
 
-
-sequelize.sync({ alter: true }) // or { force: true } to drop & recreate
-  .then(() => console.log("Database synced"))
-  .catch(err => console.error("Sync failed", err));
-
 startServer();
+
+export default app;
