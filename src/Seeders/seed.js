@@ -1,5 +1,5 @@
 import meal from '../models/meal.js';
-import { sequelize } from '../config/database.js';// Import connectDB to ensure DB is ready
+import sequelize from '../config/database.js';// Import connectDB to ensure DB is ready
 import { connectDB } from '../config/database.js';
 
 const seedMeals = async () => {
@@ -45,11 +45,11 @@ const seedMeals = async () => {
                 imageUrl: 'https://example.com/beef-stew.jpg',
                 dietaryTags: ['low-fat', 'diabetic-friendly'],
                 nutritionallnfo: { calories: 280, protein: 18, carbs: 40, fat: 5 },
-                allergens: []
+                allergens: ['Peanut']
            },
            {
                 name: 'Beef Stew',
-                descriptio: 'Classic beef stew with vegetables.',
+                description: 'Classic beef stew with vegetables.',
                 imageUrl: 'https://example.com/beef-stew.jpg',
                 dietaryTags: ['high-protein'],
                 nutritionallnfo: { calories: 450, Protein: 30, carbs: 30, fat: 25 },
