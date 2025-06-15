@@ -5,13 +5,14 @@ export const createRestaurant = async (req, res) => {
   try {
     const { name, location, meals } = req.body;
     const newRestaurant = await Restaurant.create({ name, location, meals });
-    res.status(201).json({ message: "Restaurant created successfully", restaurant: newRestaurant });
+    res.status(201).json({ message: "Restaurant successfully created", restaurant: newRestaurant });
   } catch (error) {
     res.status(500).json({ message: "Error creating restaurant", error });
   }
 };
 
 //get all restaurants
+
 export const getAllRestaurants = async (req, res) => {
   try {
     const restaurants = await Restaurant.findAll();
@@ -20,6 +21,7 @@ export const getAllRestaurants = async (req, res) => {
     res.status(500).json({ message: "Error fetching restaurants", error });
   }
 };
+
 
 //get a restaurant by id
 export const getRestaurantById = async (req, res) => {

@@ -27,9 +27,15 @@
     "express": "^4.21.2",
     "express-validator": "^7.2.1",
     "jsonwebtoken": "^9.0.0",
+<<<<<<< HEAD
     "multer": "^2.0.0",
     "mysql2": "^3.14.1",
     "sequelize": "^6.37.7",
+=======
+    "mysql2": "^3.3.1",
+    "nodemailer": "^7.0.3",
+    "sequelize": "^6.31.1",
+>>>>>>> 467eb8144fe63279765eb89c3fdbad9f83949a8b
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^4.6.3"
   },

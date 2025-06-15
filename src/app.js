@@ -3,11 +3,12 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import swaggerUi from 'swagger-ui-express';
 import { specs } from './config/swagger.js';
-import { connectDB } from './config/database.js';
-import sequelize from './config/database.js';
+import { connectDB, sequelize } from './config/database.js';
 import authRoutes from './routes/authRoutes.js';
 import restaurantRoutes from './routes/restaurantRoutes.js';
 import mealRoutes from './routes/mealRoutes.js';
+// import restaurantRoutes from './routes/restaurantRoutes.js';
+// import mealRoutes from './routes/mealRoutes.js';
 // import restaurantRoutes from './routes/restaurantRoutes.js';
 // import mealRoutes from './routes/mealRoutes.js';
 // import userRoutes from './routes/userRoutes.js';
@@ -38,9 +39,15 @@ app.use('/api/meals', mealRoutes);
 // app.use('/api/users', userRoutes);
 
 // Basic function check route
+<<<<<<< HEAD
 app.get('/', (req, res) => {
   res.status(200).json({ message: 'Dietary API is running!'});
 });
+=======
+// app.get('/', (req, res) => {
+//   res.status(200).json({ message: 'Dietary API is running!'});
+// });
+>>>>>>> 467eb8144fe63279765eb89c3fdbad9f83949a8b
 
 // Error handling
 app.use(errorHandler);

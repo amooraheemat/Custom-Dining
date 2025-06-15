@@ -23,7 +23,7 @@ const sequelize = new Sequelize(
   
 );
 
-export const connectDB = async () => {
+const connectDB = async () => {
   try {
     await sequelize.authenticate();
     console.log('Database connection established successfully.');
@@ -39,5 +39,4 @@ export const connectDB = async () => {
   }
 };
 
-export default sequelize;
-
+export {sequelize, connectDB};
