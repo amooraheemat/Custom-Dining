@@ -1,8 +1,9 @@
 import { DataTypes } from 'sequelize';
 import bcrypt from 'bcryptjs';
-import {sequelize} from '../config/database.js';
 
-const User = sequelize.define('User', {
+// Export a function that receives the sequelize instance and returns the model
+export default function(sequelize) {
+  const User = sequelize.define('User', {
     id: {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
@@ -11,6 +12,7 @@ const User = sequelize.define('User', {
     username: {
   type: DataTypes.STRING,
   allowNull: false,
+  unique: true,
   validate: {
     notNull: {
       msg: 'Username is required'
@@ -46,15 +48,6 @@ const User = sequelize.define('User', {
             },
             notEmpty: {
                 msg: 'Password cannot be empty'
-            },
-            len: {
-                args: [8, 30],
-                msg: 'Password must be between 8 and 30 characters'
-            },
-            isStrong(value) {
-                if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_])/.test(value)) {
-                    throw new Error('Password must contain uppercase, lowercase, number, and special character');
-                }
             }
         }
     },
@@ -82,6 +75,22 @@ const User = sequelize.define('User', {
     lastLogin: {
         type: DataTypes.DATE,
         allowNull: true
+    },
+    isEmailVerified: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+    },
+    emailVerificationToken: {
+        type: DataTypes.STRING,
+        allowNull: true
+    },
+    emailVerificationExpires: {
+        type: DataTypes.DATE,
+        allowNull: true
+    },
+    isActive: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false // User is inactive until email is verified
     }
 }, {
     hooks: {
@@ -89,7 +98,6 @@ const User = sequelize.define('User', {
             if (user.password) {
                 const salt = await bcrypt.genSalt(10);
                 user.password = await bcrypt.hash(user.password, salt);
-
             }
         },
         beforeUpdate: async (user) => {
@@ -99,20 +107,34 @@ const User = sequelize.define('User', {
             }
         }
     }
-});
+  });
 
-// Instance methods
-User.prototype.comparePassword = async function (candidatePassword) {
-    return bcrypt.compare(candidatePassword, this.password);
-};
+  // Instance methods
+  User.prototype.comparePassword = async function(candidatePassword) {
+    return await bcrypt.compare(candidatePassword, this.password);
+  };
 
-// ensure that when data is pulled, certain sensitive data are not sent back
-User.prototype.toJSON = function () {
-    const values = { ...this.get() };
+  // ensure that when data is pulled, certain sensitive data are not sent back
+  User.prototype.toJSON = function() {
+    const values = Object.assign({}, this.get());
     delete values.password;
     delete values.resetPasswordToken;
     delete values.resetPasswordExpires;
     return values;
-};
+  };
 
-export default User;
+  // Add any model associations here
+  User.associate = function(models) {
+    User.hasMany(models.Restaurant, {
+      foreignKey: 'userId',
+      as: 'restaurants'
+    });
+    
+    User.hasMany(models.Restaurant, {
+      foreignKey: 'approvedBy',
+      as: 'approvedRestaurants'
+    });
+  };
+
+  return User;
+}

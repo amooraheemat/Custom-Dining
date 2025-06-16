@@ -5,20 +5,63 @@ import {
   login,
   forgotPassword,
   resetPassword,
-  changePassword
+  changePassword,
+  verifyEmail,
+  resendVerificationEmail
 } from '../controllers/authController.js';
 import { protect, authorize } from '../middleware/authMiddleware.js';
+import { connectDB } from '../config/database.js';
+
+// Add db to request object
+const addDbToRequest = (req, res, next) => {
+  // Ensure db is properly initialized
+  if (!connectDB || !connectDB.sequelize) {
+    console.error('Database not initialized');
+    return res.status(500).json({
+      status: 'error',
+      message: 'Database not initialized'
+    });
+  }
+  
+  // Attach models to request
+  req.connectDB = {
+    ...connectDB,
+    models: connectDB.sequelize.models,
+    sequelize: connectDB.sequelize
+  };
+  
+  next();
+};
+
+// Ensure database is connected
+const checkDbConnection = async (req, res, next) => {
+  try {
+    await connectDB.sequelize.authenticate();
+    next();
+  } catch (error) {
+    console.error('Database connection error:', error);
+    res.status(503).json({
+      status: 'error',
+      message: 'Unable to connect to database',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
 
 const router = express.Router();
+
+// Add database middleware to all auth routes
+router.use(addDbToRequest);
+router.use(checkDbConnection);
 
 // Validation middleware
 const registerValidation = [
   body('username')
-  .trim()
-  .notEmpty().withMessage('Username is required') // ✔️ This binds message correctly
-  .bail()
-  .isLength({ min: 3, max: 30 })
-  .withMessage('Username must be between 3 and 30 characters'),
+    .trim()
+    .notEmpty().withMessage('Username is required')
+    .bail()
+    .isLength({ min: 3, max: 30 })
+    .withMessage('Username must be between 3 and 30 characters'),
   body('email')
     .isEmail()
     .withMessage('Please provide a valid email'),
@@ -27,7 +70,7 @@ const registerValidation = [
     .withMessage('Password must be at least 6 characters long'),
   body('role')
     .optional()
-    .isIn(['user', 'admin', 'moderator'])
+    .isIn(['user', 'admin', 'moderator', 'restaurant'])
     .withMessage('Invalid role specified')
 ];
 
@@ -40,10 +83,19 @@ const loginValidation = [
     .withMessage('Password is required')
 ];
 
+const emailValidation = [
+  body('email')
+    .isEmail()
+    .withMessage('Please provide a valid email')
+];
+
+// Password validation - keep it simple and let the model handle complex validation
 const passwordValidation = [
   body('password')
-    .isLength({ min: 6 })
-    .withMessage('Password must be at least 6 characters long')
+    .notEmpty()
+    .withMessage('Password is required')
+    .isString()
+    .withMessage('Password must be a string')
 ];
 
 const changePasswordValidation = [
@@ -55,6 +107,7 @@ const changePasswordValidation = [
     .withMessage('Please enter your current password'),
 ];
 
+// Public routes
 /**
  * @swagger
  * /auth/register:
@@ -84,15 +137,69 @@ const changePasswordValidation = [
  *                 minLength: 6
  *               role:
  *                 type: string
- *                 enum: [user, admin, moderator]
+ *                 enum: [user, admin, moderator, restaurant]
  *                 default: user
  *     responses:
  *       201:
- *         description: User registered successfully
+ *         description: User registered successfully. Please check your email to verify your account.
  *       400:
- *         description: Validation error
+ *         description: Validation error or user already exists
  */
 router.post('/register', registerValidation, register);
+
+/**
+ * @swagger
+ * /auth/verify-email/{token}:
+ *   get:
+ *     summary: Verify email address
+ *     tags: [Authentication]
+ *     parameters:
+ *       - in: path
+ *         name: token
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Email verification token
+ *     responses:
+ *       200:
+ *         description: Email verified successfully
+ *       400:
+ *         description: Invalid or expired token
+ */
+// Handle both query parameter and URL parameter for backward compatibility
+router.get('/verify-email/:token?', (req, res, next) => {
+  // If token is in query params, use that, otherwise use URL param
+  req.params.token = req.params.token || req.query.token;
+  return verifyEmail(req, res, next);
+});
+
+/**
+ * @swagger
+ * /auth/resend-verification:
+ *   post:
+ *     summary: Resend verification email
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       200:
+ *         description: Verification email sent successfully
+ *       400:
+ *         description: Email is already verified or invalid email
+ *       404:
+ *         description: User not found
+ */
+router.post('/resend-verification', emailValidation, resendVerificationEmail);
 
 /**
  * @swagger
@@ -179,7 +286,22 @@ router.post('/forgot-password', forgotPassword);
  *       400:
  *         description: Invalid or expired token
  */
-router.post('/reset-password/:token', passwordValidation, resetPassword);
+// Handle both URL parameter and query parameter for reset password
+const handleResetPassword = [
+  // Handle token from query or URL param
+  (req, res, next) => {
+    if (req.query.token && !req.params.token) {
+      req.params.token = req.query.token;
+    }
+    next();
+  },
+  // Password validation
+  ...passwordValidation,
+  // Reset password handler
+  resetPassword
+];
+
+router.post('/reset-password/:token?', handleResetPassword);
 
 /**
  * @swagger
@@ -254,6 +376,14 @@ router.get('/admin-only', protect, authorize('admin'), (req, res) => {
     message: 'You have admin access',
     user: req.user
   });
+});
+
+// Handle method not allowed for all auth routes
+router.all('*', (req, res, next) => {
+  const err = new Error('Method Not Allowed');
+  err.status = 405;
+  err.allowedMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'];
+  next(err);
 });
 
 export default router;

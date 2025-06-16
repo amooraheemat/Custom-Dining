@@ -1,46 +1,49 @@
 {
   "name": "custom-dining",
   "version": "1.0.0",
-  "description": "Custom Dining Backend API",
-  "homepage": "https://github.com/amooraheemat/Custom-Dining#readme",
-  "bugs": {
-    "url": "https://github.com/amooraheemat/Custom-Dining/issues"
+  "description": "A simple restaurant finder app for people with dietary restrictions",
+  "main": "src/app.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
+    "setup-db": "node setup-db.js",
+    "seed": "node seed.js",
+    "migrate": "node --loader ts-node/esm ./node_modules/.bin/sequelize db:migrate",
+    "migrate:undo": "node --loader ts-node/esm ./node_modules/.bin/sequelize db:migrate:undo",
+    "migrate:undo:all": "node --loader ts-node/esm ./node_modules/.bin/sequelize db:migrate:undo:all"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "express-validator": "^7.2.1",
+    "html-to-text": "^9.0.5",
+    "jsonwebtoken": "^9.0.0",
+    "juice": "^11.0.1",
+    "mysql2": "^3.3.1",
+    "nodemailer": "^7.0.3",
+    "pug": "^3.0.3",
+    "sequelize": "^6.31.1",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22",
+    "sequelize-cli": "^6.6.3",
+    "ts-node": "^10.9.2"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/amooraheemat/Custom-Dining.git"
   },
+  "keywords": [],
+  "author": "",
   "license": "ISC",
-  "author": "Group 11 Backend Engineers",
-  "type": "module",
-  
-  "scripts": {
-    "start": "node src/app.js",
-    "dev": "nodemon src/app.js",
-    "seed": "nodemon src/seeders/seed.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+  "bugs": {
+    "url": "https://github.com/amooraheemat/Custom-Dining/issues"
   },
-  "dependencies": {
-    "bcryptjs": "^2.4.3",
-    "cors": "^2.8.5",
-    "dotenv": "^16.5.0",
-    "express": "^4.21.2",
-    "express-validator": "^7.2.1",
-    "jsonwebtoken": "^9.0.0",
-<<<<<<< HEAD
-    "multer": "^2.0.0",
-    "mysql2": "^3.14.1",
-    "sequelize": "^6.37.7",
-=======
-    "mysql2": "^3.3.1",
-    "nodemailer": "^7.0.3",
-    "sequelize": "^6.31.1",
->>>>>>> 467eb8144fe63279765eb89c3fdbad9f83949a8b
-    "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^4.6.3"
-  },
-  "devDependencies": {
-    "nodemon": "^2.0.22"
-  },
-  "keywords": []
+  "homepage": "https://github.com/amooraheemat/Custom-Dining#readme"
 }
