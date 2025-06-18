@@ -12,6 +12,7 @@ import authRoutes from './routes/authRoutes.js';
 import restaurantRoutes from './routes/restaurantRoutes.js';
 import mealRoutes from './routes/mealRoutes.js';
 import attachDb from './middleware/dbMiddleware.js';
+import userProfileRoutes from './routes/userProfileRoutes.js';
 
 const require = createRequire(import.meta.url);
 const __filename = fileURLToPath(import.meta.url);
@@ -63,6 +64,7 @@ app.use(attachDb);
 app.use('/api/auth', authRoutes);
 app.use('/api/restaurants', restaurantRoutes);
 app.use('/api/meals', mealRoutes);
+app.use('/api/user', userProfileRoutes);
 
 // Serve API spec
 app.get('/api-docs.json', (req, res) => {
