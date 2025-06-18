@@ -1,4 +1,9 @@
 import Email from '../utils/email.js';
+import { promisify } from 'util';
+import crypto from 'crypto';
+
+// Promisify crypto.randomBytes
+const randomBytes = promisify(crypto.randomBytes);
 
 // Create URL with proper API prefix
 const createApiUrl = (type, path = '') => {
@@ -18,7 +23,7 @@ const createApiUrl = (type, path = '') => {
 // Send verification email
 export const sendVerificationEmail = async (user, token) => {
   try {
-    const url = createApiUrl('auth', `verify-email?token=${token}`);
+    const url = createApiUrl('auth', `verify-email/${token}`);
     const email = new Email(user, url);
     await email.sendEmailVerification();
     console.log(`Verification email sent to ${user.email}`, { url });

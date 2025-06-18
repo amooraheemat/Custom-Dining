@@ -140,6 +140,17 @@ class Email {
     );
   }
 
+  async sendTemporaryPassword(temporaryPassword) {
+    await this.send(
+      'temporaryPassword',
+      'Your Temporary Password for Custom Dining',
+      {
+        temporaryPassword,
+        expirationHours: 24 // 24 hours to use the temporary password
+      }
+    );
+  }
+
   async sendAdminApprovalRequest(restaurant, submittedBy) {
     await this.send(
       'adminApprovalRequest',

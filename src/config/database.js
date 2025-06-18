@@ -15,34 +15,37 @@ const sequelize = new Sequelize(
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
     dialect: process.env.DB_DIALECT || 'mysql',
-    logging: process.env.NODE_ENV === 'development' ? console.log : false,
+    logging: false, // Disable query logging in all environments
     pool: {
       max: 5,
       min: 0,
       acquire: 30000,
       idle: 10000
     },
-    dialectOptions: {
-      ssl: {
-        ca: fs.readFileSync(path.join(process.cwd(), 'src/config/ca.pem'))
-      }
-    }
+    // dialectOptions: {
+    //   ssl: {
+    //     ca: fs.readFileSync(path.join(process.cwd(), 'src/config/ca.pem'))
+    //   }
+    // }
   }
 );
 
 // Create Models [Tables]
 import createUserModel from '../models/user.js';
 import createRestaurantModel from '../models/restaurant.js';
+import createMealModel from '../models/meal.js';
 
 // Initialize models with sequelize instance
 const initModels = () => {
   const User = createUserModel(sequelize);
   const Restaurant = createRestaurantModel(sequelize);
+  const Meal = createMealModel(sequelize);
 
   // Store models in sequelize.models
   sequelize.models = {
     User,
-    Restaurant
+    Restaurant,
+    Meal
   };
 
   // Run .associate if it exists on the models
@@ -52,10 +55,14 @@ const initModels = () => {
   if (typeof Restaurant.associate === 'function') {
     Restaurant.associate(sequelize.models);
   }
+  if (typeof Meal.associate === 'function') {
+    Meal.associate(sequelize.models);
+  }
 
   return {
     User,
     Restaurant,
+    Meal,
     sequelize
   };
 };
@@ -70,14 +77,24 @@ const connectDB = async () => {
     
     // Sync database
     try {
-      // In production, use alter: true to safely update tables
-      // In development, use force: true to recreate tables
+      // Only sync specific models and be cautious with alter
       await sequelize.sync({ 
-        alter: process.env.NODE_ENV === 'production',
-        force: process.env.NODE_ENV === 'development'
+        // Only sync specific models to avoid issues
+        // sync: { models: ['User', 'Restaurant', 'Meal'] },
+        // Be more specific about what to alter
+        alter: {
+          drop: false,  // Don't drop any columns/tables
+          // Only add new columns, don't modify existing ones
+          add: true,
+          // Don't drop any indexes or constraints
+          dropIndexes: false,
+          dropConstraints: false
+        },
+        // Never drop tables automatically
+        force: false
       });
       
-      console.log(`Database synced successfully (${process.env.NODE_ENV === 'production' ? 'alter' : 'force'} mode).`);
+      console.log('Database synced successfully (safe mode).');
     } catch (error) {
       console.error('Error syncing database:', error);
       throw error;

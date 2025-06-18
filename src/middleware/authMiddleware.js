@@ -35,15 +35,43 @@ export const protect = async (req, res, next) => {
       if (!user) {
         return res.status(401).json({
           status: 'error',
-          message: 'The owner of this token no longer exists.'
+          message: 'Invalid token. Please log in again.'
         });
       }
 
+      // Debug: Log user's active status and type
+      console.log('User active status check:', {
+        userId: user.id,
+        isActive: user.isActive,
+        isActiveType: typeof user.isActive,
+        userData: {
+          ...user.get({ plain: true }),
+          password: undefined // Don't log password
+        }
+      });
+
+      // Debug: Log complete user object before isActive check
+      console.log('User object before isActive check:', {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        isActive: user.isActive,
+        isActiveType: typeof user.isActive,
+        rawData: user.get ? user.get({ plain: true }) : 'No get() method',
+        dataValues: user.dataValues || 'No dataValues'
+      });
+
       // Check if user is active
-      if (!user.isActive) {
+      if (user.isActive === false) {
+        console.log('User account is inactive:', user.id, user.email);
         return res.status(401).json({
           status: 'error',
-          message: 'This account has been deactivated. Please contact support.'
+          message: 'This account has been deactivated. Please contact support.',
+          debug: process.env.NODE_ENV === 'development' ? {
+            userId: user.id,
+            isActive: user.isActive,
+            isActiveType: typeof user.isActive
+          } : undefined
         });
       }
 
@@ -82,15 +110,15 @@ export const protect = async (req, res, next) => {
 
 /**
  * Authorize roles - checks if user has required role(s)
- * @param {...string} roles - Roles that are allowed to access the route
+ * @param {...string} allowedRoles - Roles that are allowed to access the route
  */
-export const authorize = (...roles) => {
+export const authorize = (allowedRoles) => {
   return (req, res, next) => {
     // Check if user has required role
-    if (!roles.includes(req.user.role)) {
+    if (!allowedRoles.includes(req.user.role)) {
       return res.status(403).json({
         status: 'error',
-        message: `User role ${req.user.role} is not authorized to access this route`
+        message: `User role ${req.user.role} is not authorized to access this route.`
       });
     }
     next();

@@ -1,6 +1,4 @@
-'use strict';
-
-module.exports = {
+export default {
   up: async (queryInterface, Sequelize) => {
     // Remove priceRange column if it exists
     const tableInfo = await queryInterface.describeTable('Restaurants');

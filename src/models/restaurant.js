@@ -197,16 +197,25 @@ export default function(sequelize) {
 
   // Add associations
   Restaurant.associate = function(models) {
+    // A restaurant belongs to a user (owner)
     Restaurant.belongsTo(models.User, {
       foreignKey: 'userId',
       as: 'owner',
       onDelete: 'CASCADE'
     });
     
+    // A restaurant is approved by an admin
     Restaurant.belongsTo(models.User, {
       foreignKey: 'approvedBy',
       as: 'approvedByAdmin',
       onDelete: 'SET NULL'
+    });
+    
+    // A restaurant has many meals
+    Restaurant.hasMany(models.Meal, {
+      foreignKey: 'restaurantId',
+      as: 'meals',
+      onDelete: 'CASCADE'
     });
   };
 

@@ -1,12 +1,11 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
 import { Op } from 'sequelize';
+import Email from '../utils/email.js';
 import { 
-  sendVerificationEmail,
-  sendPasswordResetEmail
+  sendVerificationEmail
 } from '../services/emailService.js';
-
-// Password validation helper function
 const validatePassword = (password) => {
   const errors = [];
   
@@ -41,6 +40,32 @@ const validatePassword = (password) => {
     isValid: errors.length === 0,
     errors
   };
+};
+
+// Generate a secure, user-friendly temporary password
+const generateTemporaryPassword = () => {
+  const lowercase = 'abcdefghjkmnpqrstuvwxyz'; // No 'l' to avoid confusion with '1'
+  const uppercase = 'ABCDEFGHJKMNPQRSTUVWXYZ'; // No 'I', 'O' to avoid confusion with '1', '0'
+  const numbers = '23456789'; // No '0', '1' to avoid confusion with 'O', 'l'
+  const symbols = '!@#$%^&*';
+  
+  // Ensure we have at least one character from each set
+  const randomLower = lowercase[Math.floor(Math.random() * lowercase.length)];
+  const randomUpper = uppercase[Math.floor(Math.random() * uppercase.length)];
+  const randomNumber = numbers[Math.floor(Math.random() * numbers.length)];
+  const randomSymbol = symbols[Math.floor(Math.random() * symbols.length)];
+  
+  // Generate the rest of the password
+  const allChars = lowercase + uppercase + numbers + symbols;
+  let tempPassword = randomLower + randomUpper + randomNumber + randomSymbol;
+  
+  // Add more random characters to make it 12 characters long
+  for (let i = 0; i < 8; i++) {
+    tempPassword += allChars[Math.floor(Math.random() * allChars.length)];
+  }
+  
+  // Shuffle the password to make it more random
+  return tempPassword.split('').sort(() => 0.5 - Math.random()).join('');
 };
 
 // Generate token
@@ -111,15 +136,18 @@ export const register = async (req, res, next) => {
     const hashedToken = crypto.createHash('sha256').update(verificationToken).digest('hex');
     
     // Create user with verification token
-    const user = await req.db.User.create({
+    const userData = {
       username,
       email,
       password,
-      role: role || 'user',
+      role,
       isActive: false,
-      emailVerificationToken: hashedToken,
-      emailVerificationExpires: Date.now() + 24 * 60 * 60 * 1000 // 24 hours
-    });
+      isEmailVerified: false,
+      verificationToken: hashedToken,
+      emailVerificationExpires: Date.now() + 24 * 60 * 60 * 1000 // 24 hours from now
+    };
+    
+    const user = await req.db.User.create(userData);
 
     // Send verification email
     try {
@@ -187,20 +215,44 @@ export const login = async (req, res, next) => {
       });
     }
 
+    // Check if temporary password has expired
+    if (user.isTemporaryPassword && new Date() > user.temporaryPasswordExpires) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Your temporary password has expired. Please request a new password reset.'
+      });
+    }
 
     // Update last login
     user.lastLogin = new Date();
     await user.save();
 
-    // Generate token
-    const token = generateToken(user.id);
+    // Generate token with additional data
+    const tokenPayload = {
+      id: user.id,
+      forcePasswordChange: user.isTemporaryPassword || user.forcePasswordChange
+    };
+    const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRATION
+    });
 
     // Remove sensitive data before sending response
     user.password = undefined;
 
+    // Check if password needs to be changed
+    if (user.isTemporaryPassword || user.forcePasswordChange) {
+      return res.status(200).json({
+        status: 'success',
+        token,
+        forcePasswordChange: true,
+        message: 'Please change your temporary password.'
+      });
+    }
+
     res.status(200).json({
       status: 'success',
       token,
+      forcePasswordChange: false
     });
   } catch (error) {
     next(error);
@@ -219,17 +271,21 @@ export const verifyEmail = async (req, res, next) => {
       });
     }
 
-    const hashedToken = crypto
-      .createHash('sha256')
-      .update(token)
-      .digest('hex');
+    // Hash the token from the URL
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
+    // First find the user by token without checking expiration
     const user = await req.db.User.findOne({
-      where: {
-        emailVerificationToken: hashedToken,
-        emailVerificationExpires: { [Op.gt]: Date.now() }
-      }
+      where: { verificationToken: hashedToken }
     });
+    
+    // Then check if the token has expired
+    if (user && user.emailVerificationExpires < Date.now()) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Verification token has expired. Please request a new one.'
+      });
+    }
 
     if (!user) {
       return res.status(400).json({
@@ -241,7 +297,7 @@ export const verifyEmail = async (req, res, next) => {
     // Mark email as verified
     user.isEmailVerified = true;
     user.isActive = true;
-    user.emailVerificationToken = null;
+    user.verificationToken = null;
     user.emailVerificationExpires = null;
     await user.save();
 
@@ -275,7 +331,8 @@ export const resendVerificationEmail = async (req, res, next) => {
       });
     }
 
-    if (user.isEmailVerified) {
+    // Check if email is verified AND has no verification token
+    if (user.isEmailVerified && !user.verificationToken) {
       return res.status(400).json({
         status: 'error',
         message: 'Email is already verified'
@@ -286,10 +343,17 @@ export const resendVerificationEmail = async (req, res, next) => {
     const verificationToken = crypto.randomBytes(32).toString('hex');
     const hashedToken = crypto.createHash('sha256').update(verificationToken).digest('hex');
     
-    // Save verification token to user
-    user.emailVerificationToken = hashedToken;
-    user.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
-    await user.save();
+    // Update only the verification token and expiration
+    await req.db.User.update(
+      {
+        verificationToken: hashedToken,
+        emailVerificationExpires: Date.now() + 24 * 60 * 60 * 1000 // 24 hours
+      },
+      {
+        where: { id: user.id },
+        fields: ['verificationToken', 'emailVerificationExpires']
+      }
+    );
 
     // Send verification email with token
     await sendVerificationEmail(user, verificationToken);
@@ -308,41 +372,127 @@ export const resendVerificationEmail = async (req, res, next) => {
 export const forgotPassword = async (req, res, next) => {
   try {
     const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Email is required'
+      });
+    }
+    
     const user = await req.db.User.findOne({ where: { email } });
 
     if (!user) {
-      return res.status(404).json({
-        status: 'error',
-        message: 'No user found with that email'
+      // Don't reveal that the email doesn't exist for security reasons
+      return res.json({
+        status: 'success',
+        message: 'If an account with that email exists, a temporary password has been sent.'
       });
     }
 
-    // Generate reset token
-    const resetToken = crypto.randomBytes(32).toString('hex');
-    user.resetPasswordToken = crypto
-      .createHash('sha256')
-      .update(resetToken)
-      .digest('hex');
-    user.resetPasswordExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
-
-    await user.save();
-
     try {
-      await sendPasswordResetEmail(user, resetToken);
-
-      res.json({
-        status: 'success',
-        message: 'Password reset link sent to your email'
+      // Generate a more user-friendly temporary password
+      const temporaryPassword = generateTemporaryPassword();
+      
+      // Set expiration to 24 hours from now
+      const expiresAt = new Date();
+      expiresAt.setHours(expiresAt.getHours() + 24);
+      
+      // Hash the password manually since we're bypassing hooks
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash(temporaryPassword, salt);
+      
+      console.log('Updating user with temporary password:', {
+        userId: user.id,
+        passwordStartsWith: hashedPassword.substring(0, 10) + '...',
+        expiresAt,
+        hashedPasswordLength: hashedPassword.length
       });
-    } catch (error) {
-      console.error('Password reset email error:', error);
-      user.resetPasswordToken = null;
-      user.resetPasswordExpires = null;
-      await user.save();
+      
+      // Update user with the new temporary password using direct SQL
+      try {
+        await req.db.sequelize.query(
+          'UPDATE `Users` ' +
+          'SET `password` = ?, ' +
+          '`isTemporaryPassword` = TRUE, ' +
+          '`temporaryPasswordExpires` = ?, ' +
+          '`forcePasswordChange` = TRUE, ' +
+          '`updatedAt` = NOW() ' +
+          'WHERE `id` = ?',
+          {
+            replacements: [hashedPassword, expiresAt, user.id],
+            type: 'UPDATE'
+          }
+        );
+        
+        console.log('Successfully updated user with temporary password');
+      } catch (dbError) {
+        console.error('Database update error:', {
+          message: dbError.message,
+          sql: dbError.sql,
+          parameters: dbError.parameters || dbError.bind,
+          original: dbError.original
+        });
+        throw dbError; // Re-throw to be caught by the outer catch block
+      }
+      
+      // Refresh the user object
+      await user.reload();
+      
+      try {
+        // Create email with the temporary password
+        const emailService = new Email(user, process.env.FRONTEND_URL || 'http://localhost:3000');
+        await emailService.sendTemporaryPassword(temporaryPassword);
+        
+        console.log(`Temporary password sent to ${user.email}`);
 
+        return res.json({
+          status: 'success',
+          message: 'If an account with that email exists, a temporary password has been sent.'
+        });
+      } catch (emailError) {
+        console.error('Failed to send password reset email:', emailError);
+        
+        // Don't reveal the error details to the client
+        return res.status(500).json({
+          status: 'error',
+          message: 'Error sending email. Please try again later.'
+        });
+      }
+    } catch (error) {
+      // Log the full error for debugging
+      console.error('Error in password reset process:', {
+        message: error.message,
+        name: error.name,
+        code: error.code,
+        // Include database error details if available
+        ...(error.original && {
+          originalMessage: error.original.message,
+          originalCode: error.original.code,
+          sqlState: error.original.sqlState,
+          sqlMessage: error.original.sqlMessage
+        }),
+        // Include the SQL query if available
+        ...(error.sql && { 
+          sql: error.sql,
+          parameters: error.parameters || error.bind
+        }),
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      });
+
+      // Return appropriate error response
       return res.status(500).json({
         status: 'error',
-        message: 'Error sending email. Please try again later.'
+        message: 'An error occurred while processing your request. Please try again.',
+        // Include more details in development
+        ...(process.env.NODE_ENV === 'development' && { 
+          error: error.message,
+          code: error.code,
+          ...(error.original && {
+            originalError: error.original.message,
+            sqlState: error.original.sqlState
+          })
+        })
       });
     }
   } catch (error) {
@@ -350,134 +500,192 @@ export const forgotPassword = async (req, res, next) => {
   }
 };
 
-// Reset password
+// Reset password - Changes password for users with temporary passwords or when changing password
+// This is used after login when forcePasswordChange is true
 export const resetPassword = async (req, res, next) => {
   try {
-    console.log('Reset password request received');
-    console.log('Request params:', req.params);
-    console.log('Request body:', req.body);
+    const { currentPassword, newPassword, confirmPassword } = req.body;
     
-    const { token } = req.params;
-    const { password } = req.body;
-
-    if (!token) {
-      console.error('No token provided');
-      return res.status(400).json({
-        status: 'error',
-        message: 'Token is required'
-      });
-    }
-
-    if (!password) {
-      console.error('No password provided');
-      return res.status(400).json({
-        status: 'error',
-        message: 'Password is required'
-      });
-    }
-
-    // Hash the token
-    const resetPasswordToken = crypto
-      .createHash('sha256')
-      .update(token)
-      .digest('hex');
-
-    console.log('Looking for user with token:', resetPasswordToken);
-    
-    const user = await req.db.User.findOne({
-      where: {
-        resetPasswordToken,
-        resetPasswordExpires: { [Op.gt]: Date.now() }
-      }
-    });
-
-    if (!user) {
-      console.error('User not found or token expired');
-      return res.status(400).json({
-        status: 'error',
-        message: 'Token is invalid or has expired'
-      });
-    }
-
-
-    try {
-      // Validate password before updating
-      const passwordValidation = validatePassword(password);
-      if (!passwordValidation.isValid) {
-        return res.status(400).json({
-          status: 'error',
-          message: 'Password validation failed',
-          errors: passwordValidation.errors
-        });
-      }
-
-      // Update password
-      console.log('Updating password for user:', user.id);
-      user.password = password;
-      user.resetPasswordToken = null;
-      user.resetPasswordExpires = null;
-      
-      console.log('Saving user...');
-      await user.save();
-      console.log('User saved successfully');
-
-      // Generate new token
-      const newToken = generateToken(user.id);
-
-      res.json({
-        status: 'success',
-        message: 'Password reset successfully'
-      });
-    } catch (saveError) {
-      console.error('Error saving user:', saveError);
-      if (saveError.name === 'SequelizeValidationError') {
-        const messages = saveError.errors.map(err => ({
-          field: err.path,
-          message: err.message
-        }));
-        return res.status(400).json({
-          status: 'error',
-          message: 'Validation error',
-          errors: messages
-        });
-      }
-      throw saveError;
-    }
-  } catch (error) {
-    console.error('Unexpected error in resetPassword:', error);
-    next(error);
-  }
-};
-
-// Change password
-export const changePassword = async (req, res, next) => {
-  try {
-    const { currentPassword, newPassword } = req.body;
+    // 1) Get user from the collection
     const user = await req.db.User.findByPk(req.user.id);
-
+    
+    if (!user) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'User not found.'
+      });
+    }
+    
+    // 2) Check if current password is correct
     if (!(await user.comparePassword(currentPassword))) {
       return res.status(401).json({
         status: 'error',
-        message: 'Current password is incorrect'
+        message: 'Your current password is incorrect.'
       });
     }
-
-    // Validate new password
+    
+    // 3) Check if new password and confirm password match
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'New password and confirm password do not match.'
+      });
+    }
+    
+    // 4) Validate new password
     const passwordValidation = validatePassword(newPassword);
     if (!passwordValidation.isValid) {
       return res.status(400).json({
         status: 'error',
-        message: 'Password validation failed',
+        message: 'Password does not meet requirements',
         errors: passwordValidation.errors
       });
     }
-
-    user.password = newPassword;
-    await user.save();
-
-    res.json({
+    
+    // 5) Check if new password is the same as the current one
+    if (await user.comparePassword(newPassword)) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'New password cannot be the same as the current password.'
+      });
+    }
+    
+    // 6) Update password and reset temporary flags
+    // Hash the password manually before saving
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+    
+    // Use direct SQL update to bypass any hooks that might interfere
+    await req.db.sequelize.query(
+      'UPDATE `Users` SET ' +
+      '`password` = ?, ' +
+      '`isTemporaryPassword` = FALSE, ' +
+      '`forcePasswordChange` = FALSE, ' +
+      '`temporaryPasswordExpires` = NULL, ' +
+      '`updatedAt` = NOW() ' +
+      'WHERE `id` = ?',
+      {
+        replacements: [hashedPassword, user.id],
+        type: 'UPDATE'
+      }
+    );
+    
+    // Refresh the user object to get the latest data
+    await user.reload();
+    
+    // 7) Generate new token without forcePasswordChange flag
+    const tokenPayload = {
+      id: user.id,
+      forcePasswordChange: false
+    };
+    const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRATION
+    });
+    
+    // 8) Remove sensitive data from output
+    user.password = undefined;
+    
+    res.status(200).json({
       status: 'success',
-      message: 'Password updated successfully'
+      message: 'Password updated successfully.',
+      token,
+      forcePasswordChange: false
+    });
+  } catch (error) {
+    console.error('Error in resetPassword:', error);
+    next(error);
+  }
+};
+
+// Change password - For logged-in users who want to change their password
+export const changePassword = async (req, res, next) => {
+  try {
+    const { currentPassword, newPassword, confirmPassword } = req.body;
+    
+    // 1) Get user from the collection
+    const user = await req.db.User.findByPk(req.user.id);
+    
+    if (!user) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'User not found.'
+      });
+    }
+    
+    // 2) Check if current password is correct
+    if (!(await user.comparePassword(currentPassword))) {
+      return res.status(401).json({
+        status: 'error',
+        message: 'Your current password is incorrect.'
+      });
+    }
+    
+    // 3) Check if new password and confirm password match
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'New password and confirm password do not match.'
+      });
+    }
+    
+    // 4) Validate new password
+    const passwordValidation = validatePassword(newPassword);
+    if (!passwordValidation.isValid) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'Password does not meet requirements',
+        errors: passwordValidation.errors
+      });
+    }
+    
+    // 5) Check if new password is the same as the current one
+    if (await user.comparePassword(newPassword)) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'New password cannot be the same as the current password.'
+      });
+    }
+    
+    // 6) Update password
+    // Hash the password manually before saving
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+    
+    // Use direct SQL update to bypass any hooks that might interfere
+    await req.db.sequelize.query(
+      'UPDATE `Users` SET ' +
+      '`password` = ?, ' +
+      '`isTemporaryPassword` = FALSE, ' +
+      '`forcePasswordChange` = FALSE, ' +
+      '`temporaryPasswordExpires` = NULL, ' +
+      '`updatedAt` = NOW() ' +
+      'WHERE `id` = ?',
+      {
+        replacements: [hashedPassword, user.id],
+        type: 'UPDATE'
+      }
+    );
+    
+    // Refresh the user object to get the latest data
+    await user.reload();
+    
+    // 7) Generate new token without forcePasswordChange flag
+    const tokenPayload = {
+      id: user.id,
+      forcePasswordChange: false
+    };
+    const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, {
+      expiresIn: process.env.JWT_EXPIRATION
+    });
+    
+    // 8) Remove sensitive data from output
+    user.password = undefined;
+    
+    res.status(200).json({
+      status: 'success',
+      message: 'Password changed successfully.',
+      token,
+      forcePasswordChange: false
     });
   } catch (error) {
     next(error);

@@ -9,11 +9,13 @@
     "dev": "nodemon src/app.js",
     "setup-db": "node setup-db.js",
     "seed": "node seed.js",
-    "migrate": "node --loader ts-node/esm ./node_modules/.bin/sequelize db:migrate",
+    "migrate": "node scripts/run-migration.js",
+    "migrate:create": "node --loader ts-node/esm ./node_modules/.bin/sequelize migration:generate --name",
     "migrate:undo": "node --loader ts-node/esm ./node_modules/.bin/sequelize db:migrate:undo",
     "migrate:undo:all": "node --loader ts-node/esm ./node_modules/.bin/sequelize db:migrate:undo:all"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "bcryptjs": "^2.4.3",
     "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",

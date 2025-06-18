@@ -258,16 +258,12 @@ router.post('/forgot-password', forgotPassword);
 
 /**
  * @swagger
- * /auth/reset-password/{token}:
+ * /auth/reset-password:
  *   post:
- *     summary: Reset password
+ *     summary: Reset password using temporary password
  *     tags: [Authentication]
- *     parameters:
- *       - in: path
- *         name: token
- *         required: true
- *         schema:
- *           type: string
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -275,33 +271,69 @@ router.post('/forgot-password', forgotPassword);
  *           schema:
  *             type: object
  *             required:
- *               - password
+ *               - currentPassword
+ *               - newPassword
+ *               - passwordConfirm
  *             properties:
- *               password:
+ *               currentPassword:
  *                 type: string
- *                 minLength: 6
+ *                 format: password
+ *                 description: Current password (or temporary password)
+ *               newPassword:
+ *                 type: string
+ *                 format: password
+ *                 description: New password
+ *               passwordConfirm:
+ *                 type: string
+ *                 format: password
+ *                 description: Confirm new password
  *     responses:
  *       200:
- *         description: Password reset successful
+ *         description: Password updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 token:
+ *                   type: string
+ *                   description: New JWT token
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     user:
+ *                       $ref: '#/components/schemas/User'
  *       400:
- *         description: Invalid or expired token
+ *         description: Invalid input
+ *       401:
+ *         description: Unauthorized - Invalid or expired temporary password
+ *       500:
+ *         description: Server error
  */
-// Handle both URL parameter and query parameter for reset password
-const handleResetPassword = [
-  // Handle token from query or URL param
-  (req, res, next) => {
-    if (req.query.token && !req.params.token) {
-      req.params.token = req.query.token;
-    }
-    next();
-  },
-  // Password validation
-  ...passwordValidation,
-  // Reset password handler
-  resetPassword
+const resetPasswordValidation = [
+  body('currentPassword')
+    .notEmpty()
+    .withMessage('Current password is required'),
+  body('newPassword')
+    .isLength({ min: 8 })
+    .withMessage('Password must be at least 8 characters long')
+    .matches(/[a-z]/)
+    .withMessage('Password must contain at least one lowercase letter')
+    .matches(/[A-Z]/)
+    .withMessage('Password must contain at least one uppercase letter')
+    .matches(/[0-9]/)
+    .withMessage('Password must contain at least one number')
+    .matches(/[^a-zA-Z0-9]/)
+    .withMessage('Password must contain at least one special character'),
+  body('passwordConfirm')
+    .custom((value, { req }) => value === req.body.newPassword)
+    .withMessage('Passwords do not match')
 ];
 
-router.post('/reset-password/:token?', handleResetPassword);
+router.post('/reset-password', protect, resetPasswordValidation, resetPassword);
 
 /**
  * @swagger

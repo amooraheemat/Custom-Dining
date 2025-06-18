@@ -7,23 +7,54 @@ import { sequelize, connectDB } from './src/config/database.js';
 import User from './src/models/user.js';
 import Restaurant from './src/models/restaurant.js';
 
+// Function to get user confirmation
+function getConfirmation(question) {
+  const readline = require('readline').createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+
+  return new Promise(resolve => {
+    readline.question(question, (answer) => {
+      readline.close();
+      resolve(answer.toLowerCase() === 'yes');
+    });
+  });
+}
+
 // Function to set up the database
 async function setupDatabase() {
   try {
-    // Connect to the database using the existing configuration
+    console.log('WARNING: This will DROP ALL TABLES and recreate the database schema.');
+    console.log('ALL DATA WILL BE LOST!');
+    
+    const confirmed = await getConfirmation('Are you sure you want to continue? (yes/no) ');
+    
+    if (!confirmed) {
+      console.log('Database setup cancelled.');
+      process.exit(0);
+    }
+
+    console.log('Connecting to database...');
     await connectDB();
     
-    // Force sync all models with the database (this will drop tables and recreate them)
+    console.log('Recreating database tables...');
     await sequelize.sync({ force: true });
-    console.log('Database tables have been recreated.');
-
-    console.log('Database setup completed successfully!');
+    
+    console.log('✅ Database tables have been recreated.');
+    console.log('✅ Database setup completed successfully!');
+    
     process.exit(0);
   } catch (error) {
-    console.error('Unable to set up the database:', error);
+    console.error('❌ Unable to set up the database:', error);
     process.exit(1);
   }
 }
 
-// Run the setup
-setupDatabase();
+// Only run this script if it's the main module
+if (require.main === module) {
+  setupDatabase();
+} else {
+  console.warn('This script is meant to be run directly, not required as a module');
+  process.exit(1);
+}
