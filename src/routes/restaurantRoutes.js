@@ -309,4 +309,95 @@ router.post('/', createRestaurantValidation, createRestaurant);
  */
 router.patch('/:id/status', authorize('admin'), updateStatusValidation, updateRestaurantStatus);
 
+/**
+ * @swagger
+ * /restaurants:
+ *   post:
+ *     summary: Create a new restaurant (requires authentication)
+ *     tags: [Restaurants]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - location
+ *               - userId
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 minLength: 3
+ *                 maxLength: 100
+ *               location:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *                 maxLength: 1000
+ *               userId:
+ *                 type: string
+ *                 format: uuid
+ *     responses:
+ *       201:
+ *         description: Restaurant created successfully (pending admin approval)
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Unauthorized - Authentication required
+ */
+// Protected routes (require authentication)
+router.post('/', createRestaurantValidation, createRestaurant);
+
+/**
+ * @swagger
+ * /restaurants/{id}/status:
+ *   patch:
+ *     summary: Update restaurant status (Admin only)
+ *     tags: [Restaurants]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Restaurant ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - status
+ *               - adminId
+ *             properties:
+ *               status:
+ *                 type: string
+ *                 enum: [approved, rejected]
+ *               adminId:
+ *                 type: string
+ *                 format: uuid
+ *               rejectionReason:
+ *                 type: string
+ *                 maxLength: 500
+ *     responses:
+ *       200:
+ *         description: Restaurant status updated successfully
+ *       400:
+ *         description: Invalid input
+ *       401:
+ *         description: Not authenticated
+ *       403:
+ *         description: Not authorized
+ *       404:
+ *         description: Restaurant not found
+ */
+router.patch('/:id/status', authorize('admin'), updateStatusValidation, updateRestaurantStatus);
+
 export default router;

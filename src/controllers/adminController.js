@@ -1,5 +1,5 @@
-import Restaurant from "../models/restaurant";
-import User from "../models/user";
+import Restaurant from "../models/restaurant.js";
+import User from "../models/user.js";
 
 export const approveRestaurant = async (req, res) => {
   try {

@@ -10,6 +10,7 @@ import { connectDB } from './config/database.js';
 import { specs } from './config/swagger.js';
 import authRoutes from './routes/authRoutes.js';
 import restaurantRoutes from './routes/restaurantRoutes.js';
+import userProfileRoutes from './routes/userProfileRoutes.js';
 
 const require = createRequire(import.meta.url);
 const __filename = fileURLToPath(import.meta.url);
@@ -56,6 +57,7 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs, swaggerOptions));
 // API Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/restaurants', restaurantRoutes);
+app.use('/api/user', userProfileRoutes);
 
 // Serve API spec
 app.get('/api-docs.json', (req, res) => {
