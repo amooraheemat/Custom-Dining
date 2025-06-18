@@ -1,4 +1,5 @@
-import Restaurant from "../models/restaurant";
+import Restaurant from "../models/restaurant.js";
+import User from "../models/user.js";
 
 export const approveRestaurant = async (req, res) => {
   try {
@@ -86,3 +87,36 @@ export const rejectRestaurant = async (req, res) => {
   }
 }
 
+//Get All Users
+export const getAllUsers = async (req,res) => {
+
+  const limit = parseInt(req.query.limit) || 10;  // Default is 10
+  const offset = parseInt(req.query.offset) || 0;
+
+  try{
+    const users = await User.findAll({
+      attributes: {exclude: ['password', 'email', 'resetToken'] },
+      limit,
+      offset
+    });
+
+    return res.status(200).json({
+      success: true,
+      count: users.length,
+      data: users,
+      message: users.length === 0 ? 'No Users found' : undefined,
+      pagination: {
+        limit,
+        offset
+      }
+    });
+  }
+  catch (error) {
+    console.error( 'Unable to get Users', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Server Error: Unable to get all Users'
+    });
+  }
+}
