@@ -7,34 +7,3 @@ package-lock.json
 
 # Logs
 *.log
-
-# IDE and editor files
-.vscode/
-.idea/
-*.sublime-workspace
-*.sublime-project
-
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-
-# Uploads
-/uploads/
-
-# Debug logs
-npm-debug.log*
-
-# Local development
-config/local.*
-
-# Test coverage
-/coverage/
-
-# Build directories
-/dist/
-/build/
