@@ -45,12 +45,12 @@ const initModels = () => {
   
   UserProfile.init({
     id: {
-      type: Sequelize.INTEGER,
+      type: Sequelize.UUID,
       autoIncrement: true,
       primaryKey: true,
     },
     userId: {
-      type: Sequelize.INTEGER,
+      type: Sequelize.UUID,
       allowNull: false,
       unique: true,
       references: {
