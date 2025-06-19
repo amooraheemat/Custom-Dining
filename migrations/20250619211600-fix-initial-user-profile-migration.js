@@ -28,7 +28,7 @@ module.exports = {
     // Now create user_profiles with matching UUID type
     await queryInterface.createTable('user_profiles', {
       id: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.UUID,
         autoIncrement: true,
         primaryKey: true,
       },
