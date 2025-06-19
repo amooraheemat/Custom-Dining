@@ -46,7 +46,6 @@ const initModels = () => {
   UserProfile.init({
     id: {
       type: Sequelize.UUID,
-      autoIncrement: true,
       primaryKey: true,
     },
     userId: {

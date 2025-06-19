@@ -33,7 +33,6 @@ module.exports = {
     await queryInterface.createTable('user_profiles', {
       id: {
         type: Sequelize.UUID,
-        autoIncrement: true,
         primaryKey: true,
       },
       userId: {
