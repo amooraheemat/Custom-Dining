@@ -238,11 +238,7 @@ export const createRestaurant = async (req, res, next) => {
 // Get all approved restaurants
 export const getAllRestaurants = async (req, res, next) => {
   try {
-    const restaurants = await req.db.Restaurant.findAll({ 
-      where: { 
-        status: 'approved',
-        isActive: true
-      },
+    const restaurants = await req.db.Restaurant.unscoped().findAll({
       include: [
         {
           model: req.db.User,
@@ -251,7 +247,7 @@ export const getAllRestaurants = async (req, res, next) => {
           required: false
         }
       ],
-      order: [['createdAt', 'DESC']]
+      order: [['createdAt', 'DESC']],
     });
     
     // Response body
@@ -264,7 +260,10 @@ export const getAllRestaurants = async (req, res, next) => {
           restaurantName: restaurant.name,
           location: restaurant.location,
           cuisineType: restaurant.cuisineType,
-          contactEmail: restaurant.contactEmail
+          contactEmail: restaurant.contactEmail,
+          status: restaurant.status,
+          isActive: restaurant.isActive,
+          owner: restaurant.owner
         }))
       }
     };

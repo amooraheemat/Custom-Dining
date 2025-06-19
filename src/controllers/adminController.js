@@ -1,6 +1,7 @@
 import Restaurant from "../models/restaurant.js";
 import User from "../models/user.js";
 import { sendRestaurantApprovalEmail } from "../services/emailService.js";
+import { Op } from 'sequelize';
 
 
 
@@ -161,7 +162,23 @@ export const getAllUsers = async (req, res) => {
 
   try {
     const users = await req.db.User.findAll({
-      attributes: { exclude: ['password', 'email', 'resetToken'] },
+      where: {
+        role: {
+          [Op.ne]: 'admin' // Exclude admin users
+        }
+      },
+      attributes: { 
+        exclude: [
+          'password', 
+          'resetToken', 
+          'verificationToken', 
+          'passwordResetToken', 
+          'passwordResetExpires', 
+          'isTemporaryPassword', 
+          'temporaryPasswordExpires', 
+          'forcePasswordChange'
+        ] 
+      },
       limit,
       offset,
       raw: true
@@ -170,7 +187,17 @@ export const getAllUsers = async (req, res) => {
     return res.status(200).json({
       success: true,
       count: users.length,
-      data: users,
+      data: {
+        users: users.map(user => ({
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          role: user.role,
+          isEmailVerified: user.isEmailVerified,
+          isActive: user.isActive,
+          createdAt: user.createdAt
+        }))
+      },
       message: users.length === 0 ? 'No Users found' : undefined,
       pagination: {
         limit,
