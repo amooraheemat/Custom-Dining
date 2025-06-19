@@ -36,57 +36,11 @@ import createUserProfileModel from '../models/userProfile.js';
 
 // Initialize models with sequelize instance
 const initModels = () => {
+  // Initialize models
   const User = createUserModel(sequelize);
   const Restaurant = createRestaurantModel(sequelize);
   const Meal = createMealModel(sequelize);
-
-  // Initialize UserProfile model
   const UserProfile = createUserProfileModel(sequelize);
-  
-  UserProfile.init({
-    id: {
-      type: Sequelize.UUID,
-      primaryKey: true,
-    },
-    userId: {
-      type: Sequelize.UUID,
-      allowNull: false,
-      unique: true,
-      references: {
-        model: User,
-        key: 'id',
-      },
-      onDelete: 'CASCADE',
-    },
-    healthGoal: {
-      type: Sequelize.STRING,
-      allowNull: true,
-    },
-    dietaryRestrictions: {
-      type: Sequelize.JSON,
-      allowNull: true,
-      defaultValue: [],
-    },
-    preferredMealTags: {
-      type: Sequelize.JSON,
-      allowNull: true,
-      defaultValue: [],
-    },
-  }, {
-    sequelize,
-    modelName: 'UserProfile',
-    tableName: 'user_profiles',
-    timestamps: true,
-  });
-
-  // Set up associations
-  User.hasOne(UserProfile, {
-    foreignKey: 'userId',
-    onDelete: 'CASCADE',
-  });
-  UserProfile.belongsTo(User, {
-    foreignKey: 'userId',
-  });
 
   // Store models in sequelize.models
   sequelize.models = {
@@ -106,12 +60,16 @@ const initModels = () => {
   if (typeof Meal.associate === 'function') {
     Meal.associate(sequelize.models);
   }
+  if (typeof UserProfile.associate === 'function') {
+    UserProfile.associate(sequelize.models);
+  }
 
   return {
+    sequelize,
     User,
     Restaurant,
     Meal,
-    sequelize
+    UserProfile
   };
 };
 
