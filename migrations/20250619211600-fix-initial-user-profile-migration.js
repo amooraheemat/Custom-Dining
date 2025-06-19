@@ -2,6 +2,10 @@
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
+    await queryInterface.sequelize.query(
+      'ALTER TABLE `user_profiles` DROP FOREIGN KEY `user_profiles_ibfk_1`;'
+    );
+
     // First ensure the Users table exists with UUID id
     await queryInterface.sequelize.query(`
       CREATE TABLE IF NOT EXISTS Users (
