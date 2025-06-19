@@ -20,11 +20,11 @@ const sequelize = new Sequelize(
       acquire: 30000,
       idle: 10000
     },
-    // dialectOptions: {
-    //   ssl: {
-    //     ca: fs.readFileSync(path.join(process.cwd(), 'src/config/ca.pem'))
-    //   }
-    // }
+    dialectOptions: {
+      ssl: {
+        ca: fs.readFileSync(path.join(process.cwd(), 'src/config/ca.pem'))
+      }
+    }
   }
 );
 
