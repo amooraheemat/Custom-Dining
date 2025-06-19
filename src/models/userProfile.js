@@ -1,8 +1,6 @@
 import { DataTypes } from 'sequelize';
 
 export default function(sequelize) {
-  const User = sequelize.models.User;
-  
   const UserProfile = sequelize.define('UserProfile', {
     id: {
       type: DataTypes.INTEGER,
@@ -14,10 +12,14 @@ export default function(sequelize) {
       allowNull: false,
       unique: true,
       references: {
-        model: 'Users',
+        model: {
+          tableName: 'Users', // Explicit table name
+          schema: 'public' // If using schema
+        },
         key: 'id',
       },
-      onDelete: 'CASCADE', 
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE'
     },
     healthGoal: {
       type: DataTypes.STRING,
@@ -36,22 +38,18 @@ export default function(sequelize) {
   }, {
     timestamps: true,
     tableName: 'user_profiles',
+    underscored: true // If you prefer snake_case columns
   });
 
-  // Define associations
-  if (User) {
-    UserProfile.belongsTo(User, {
+  // Associations
+  UserProfile.associate = function(models) {
+    UserProfile.belongsTo(models.User, {
       foreignKey: 'userId',
       as: 'user',
-      onDelete: 'CASCADE'
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE'
     });
-
-    User.hasOne(UserProfile, {
-      foreignKey: 'userId',
-      as: 'profile',
-      onDelete: 'CASCADE'
-    });
-  }
+  };
 
   return UserProfile;
 }

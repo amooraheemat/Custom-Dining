@@ -2,22 +2,30 @@
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    // First check the structure of the Users table
-    const [results] = await queryInterface.sequelize.query(
-      "SHOW CREATE TABLE Users"
-    );
-    console.log('Users table structure:', results[0]['Create Table']);
+    // First ensure the Users table exists with UUID id
+    await queryInterface.sequelize.query(`
+      CREATE TABLE IF NOT EXISTS Users (
+        id CHAR(36) PRIMARY KEY,
+        username VARCHAR(255) NOT NULL,
+        email VARCHAR(255) NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        role ENUM('user', 'restaurant', 'admin') NOT NULL DEFAULT 'user',
+        isEmailVerified BOOLEAN DEFAULT false,
+        verificationToken VARCHAR(255),
+        passwordResetToken VARCHAR(255),
+        passwordResetExpires DATETIME,
+        isTemporaryPassword BOOLEAN DEFAULT false,
+        temporaryPasswordExpires DATETIME,
+        forcePasswordChange BOOLEAN DEFAULT false,
+        isActive BOOLEAN DEFAULT true,
+        createdAt DATETIME NOT NULL,
+        updatedAt DATETIME NOT NULL,
+        UNIQUE KEY users_username_unique (username),
+        UNIQUE KEY users_email_unique (email)
+      ) ENGINE=InnoDB;
+    `);
 
-    // Drop existing user_profiles table if it exists
-    const [tableExists] = await queryInterface.sequelize.query(
-      "SHOW TABLES LIKE 'user_profiles'"
-    );
-    
-    if (tableExists.length > 0) {
-      await queryInterface.dropTable('user_profiles');
-    }
-    
-    // Create the table with the correct schema
+    // Now create user_profiles with matching UUID type
     await queryInterface.createTable('user_profiles', {
       id: {
         type: Sequelize.INTEGER,
@@ -25,7 +33,7 @@ module.exports = {
         primaryKey: true,
       },
       userId: {
-        type: Sequelize.UUID, // Must match Users.id type
+        type: Sequelize.UUID,
         allowNull: false,
         unique: true,
         references: {
@@ -60,7 +68,7 @@ module.exports = {
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP'),
       },
     });
-    
+
     await queryInterface.addIndex('user_profiles', ['userId']);
   },
 
