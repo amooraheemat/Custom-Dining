@@ -6,8 +6,7 @@ export default function(sequelize) {
       type: DataTypes.UUID,
       defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
-      allowNull: false,
-      autoIncrement: false  // Ensure autoIncrement is false for UUID
+      allowNull: false
     },
     userId: {
       type: DataTypes.UUID,
