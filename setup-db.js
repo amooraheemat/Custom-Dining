@@ -10,6 +10,7 @@ import { sequelize, connectDB } from './src/config/database.js';
 import './src/models/user.js';
 import './src/models/restaurant.js';
 import './src/models/meal.js';
+import './src/models/userProfile.js';
 
 // Function to get user confirmation
 function getConfirmation(question) {

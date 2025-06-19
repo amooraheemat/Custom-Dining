@@ -4,40 +4,63 @@ export default function(sequelize) {
   const UserProfile = sequelize.define('UserProfile', {
     id: {
       type: DataTypes.UUID,
-      autoIncrement: true,
+      defaultValue: DataTypes.UUIDV4,
       primaryKey: true,
+      allowNull: false
     },
     userId: {
       type: DataTypes.UUID,
       allowNull: false,
       unique: true,
       references: {
-        model: {
-          tableName: 'Users', // Explicit table name
-          schema: 'public' // If using schema
-        },
+        model: 'Users',
         key: 'id',
       },
       onDelete: 'CASCADE',
-      onUpdate: 'CASCADE'
+      onUpdate: 'CASCADE',
+      comment: 'References the Users table'
     },
     healthGoal: {
       type: DataTypes.STRING,
       allowNull: true,
+      validate: {
+        len: [0, 255]
+      }
     },
     dietaryRestrictions: {
       type: DataTypes.JSON,
       allowNull: true,
       defaultValue: [],
+      validate: {
+        isValidDietaryRestrictions(value) {
+          if (value && !Array.isArray(value)) {
+            throw new Error('dietaryRestrictions must be an array');
+          }
+        }
+      }
     },
     preferredMealTags: {
       type: DataTypes.JSON,
       allowNull: true,
       defaultValue: [],
+      validate: {
+        isValidMealTags(value) {
+          if (value && !Array.isArray(value)) {
+            throw new Error('preferredMealTags must be an array');
+          }
+        }
+      }
     },
   }, {
     timestamps: true,
-    tableName: 'user_profiles'
+    tableName: 'user_profiles',
+    paranoid: true, // Enable soft deletes
+    indexes: [
+      {
+        unique: true,
+        fields: ['userId']
+      }
+    ]
   });
 
   // Associations
@@ -48,6 +71,15 @@ export default function(sequelize) {
       onDelete: 'CASCADE',
       onUpdate: 'CASCADE'
     });
+  };
+
+  // Add instance methods if needed
+  UserProfile.prototype.getProfileSummary = function() {
+    return {
+      healthGoal: this.healthGoal,
+      dietaryRestrictions: this.dietaryRestrictions || [],
+      preferredMealTags: this.preferredMealTags || []
+    };
   };
 
   return UserProfile;

@@ -176,6 +176,14 @@ export default function(sequelize) {
       foreignKey: 'approvedBy',
       as: 'approvedRestaurants'
     });
+
+    // Add UserProfile association
+    User.hasOne(models.UserProfile, {
+      foreignKey: 'userId',
+      as: 'profile',
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE'
+    });
   };
 
   // Add indexes after model definition
