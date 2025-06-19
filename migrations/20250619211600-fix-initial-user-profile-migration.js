@@ -2,13 +2,18 @@
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
-    // First, check if the table exists
+    // First check the structure of the Users table
     const [results] = await queryInterface.sequelize.query(
+      "SHOW CREATE TABLE Users"
+    );
+    console.log('Users table structure:', results[0]['Create Table']);
+
+    // Drop existing user_profiles table if it exists
+    const [tableExists] = await queryInterface.sequelize.query(
       "SHOW TABLES LIKE 'user_profiles'"
     );
     
-    // If the table exists, drop it so we can recreate it with the correct schema
-    if (results.length > 0) {
+    if (tableExists.length > 0) {
       await queryInterface.dropTable('user_profiles');
     }
     
@@ -20,14 +25,15 @@ module.exports = {
         primaryKey: true,
       },
       userId: {
-        type: Sequelize.UUID,
+        type: Sequelize.UUID, // Must match Users.id type
         allowNull: false,
         unique: true,
         references: {
-          model: 'Users', // Note: Case-sensitive, should match your Users table name
+          model: 'Users',
           key: 'id',
         },
         onDelete: 'CASCADE',
+        onUpdate: 'CASCADE'
       },
       healthGoal: {
         type: Sequelize.STRING,
@@ -55,7 +61,6 @@ module.exports = {
       },
     });
     
-    // Add index on userId for better query performance
     await queryInterface.addIndex('user_profiles', ['userId']);
   },
 
