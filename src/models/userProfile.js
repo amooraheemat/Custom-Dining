@@ -3,7 +3,7 @@ import { DataTypes } from 'sequelize';
 export default function(sequelize) {
   const UserProfile = sequelize.define('UserProfile', {
     id: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.UUID,
       autoIncrement: true,
       primaryKey: true,
     },
@@ -37,8 +37,7 @@ export default function(sequelize) {
     },
   }, {
     timestamps: true,
-    tableName: 'user_profiles',
-    underscored: true // If you prefer snake_case columns
+    tableName: 'user_profiles'
   });
 
   // Associations
