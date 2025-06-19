@@ -1,5 +1,5 @@
-import { UserProfile } from '../models/UserProfile.js';
-import { Meal } from '../models/meal.js';
+import UserProfile from '../models/userProfile.js';
+import Meal from '../models/meal.js';
 import { Op } from 'sequelize';
 
 // Create User Profile

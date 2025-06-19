@@ -5,7 +5,7 @@ import {
   getRestaurantById, 
   createRestaurant,
   getPendingRestaurants,
-  updateRestaurantStatus
+  // updateRestaurantStatus
 } from '../controllers/restaurantController.js';
 import { protect, authorize } from '../middleware/authMiddleware.js';
 import { db } from '../config/database.js';
@@ -307,7 +307,7 @@ router.post('/', createRestaurantValidation, createRestaurant);
  *       404:
  *         description: Restaurant not found
  */
-router.patch('/:id/status', authorize('admin'), updateStatusValidation, updateRestaurantStatus);
+// router.patch('/:id/status', authorize('admin'), updateStatusValidation, updateRestaurantStatus);
 
 /**
  * @swagger
@@ -398,6 +398,6 @@ router.post('/', createRestaurantValidation, createRestaurant);
  *       404:
  *         description: Restaurant not found
  */
-router.patch('/:id/status', authorize('admin'), updateStatusValidation, updateRestaurantStatus);
+// router.patch('/:id/status', authorize('admin'), updateStatusValidation, updateRestaurantStatus);
 
 export default router;

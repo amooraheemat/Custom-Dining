@@ -44,7 +44,7 @@ export default function(sequelize) {
         }
       }
     },
-    imageUrl: {
+    image_url: {
       type: DataTypes.STRING,
       allowNull: true,
       validate: {
@@ -84,7 +84,6 @@ export default function(sequelize) {
   }, {
     tableName: 'meals',
     timestamps: true,
-    underscored: true
   });
 
   // Add associations

@@ -13,6 +13,7 @@ import restaurantRoutes from './routes/restaurantRoutes.js';
 import mealRoutes from './routes/mealRoutes.js';
 import attachDb from './middleware/dbMiddleware.js';
 import userProfileRoutes from './routes/userProfileRoutes.js';
+import adminRoutes from './routes/adminRoutes.js';
 
 const require = createRequire(import.meta.url);
 const __filename = fileURLToPath(import.meta.url);
@@ -31,7 +32,7 @@ app.use(express.json()); // Parse JSON request bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded request bodies
 app.use(cookieParser()); // Parse cookies
 
-// Simple request logging
+//Logging requests
 app.use((req, res, next) => {
   console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
   next();
@@ -65,6 +66,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/restaurants', restaurantRoutes);
 app.use('/api/meals', mealRoutes);
 app.use('/api/user', userProfileRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Serve API spec
 app.get('/api-docs.json', (req, res) => {
@@ -104,7 +106,7 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5001;
 
 const startServer = async () => {
   try {

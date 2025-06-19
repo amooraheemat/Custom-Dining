@@ -1,7 +1,7 @@
 import { DataTypes } from 'sequelize';
 import bcrypt from 'bcryptjs';
 
-// Export a function that receives the sequelize instance and returns the model
+// Export function that receives the sequelize instance and returns the model
 export default function(sequelize) {
   const User = sequelize.define('User', {
     id: {
@@ -94,24 +94,19 @@ export default function(sequelize) {
     hooks: {
     beforeCreate: async (user) => {
       if (user.password) {
+        console.log('Hashing password during user creation');
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(user.password, salt);
+        console.log('Password hashed successfully');
       }
     },
     beforeUpdate: async (user) => {
-      // Only hash the password if it's being modified
+      // Hashed password
       if (user.changed('password')) {
+        console.log('Password changed, hashing new password');
         const salt = await bcrypt.genSalt(10);
         user.password = await bcrypt.hash(user.password, salt);
-      }
-    },
-    // Add a beforeSave hook to handle direct updates
-    beforeSave: async (user) => {
-      if (user._previousDataValues && 
-          user._previousDataValues.password !== user.password &&
-          user.password) {
-        const salt = await bcrypt.genSalt(10);
-        user.password = await bcrypt.hash(user.password, salt);
+        console.log('Password updated successfully');
       }
     }
   }
@@ -120,23 +115,43 @@ export default function(sequelize) {
   // Instance methods
   User.prototype.comparePassword = async function(candidatePassword) {
     try {
-      console.log('Comparing passwords:', {
-        userId: this.id,
-        candidatePassword: candidatePassword ? 'provided' : 'missing',
-        storedPassword: this.password ? 'exists' : 'missing',
-        storedPasswordStartsWith: this.password ? this.password.substring(0, 10) + '...' : 'n/a'
-      });
+      console.log('=== PASSWORD COMPARISON START ===');
+      console.log('User ID:', this.id);
+      console.log('Candidate password provided:', candidatePassword ? 'yes' : 'no');
+      console.log('Stored password exists:', this.password ? 'yes' : 'no');
       
-      if (!candidatePassword || !this.password) {
-        console.log('Missing password for comparison');
+      if (this.password) {
+        console.log('Stored password starts with:', this.password.substring(0, 10) + '...');
+        console.log('Stored password length:', this.password.length);
+      }
+      
+      if (!candidatePassword) {
+        console.error('No password provided for comparison');
         return false;
       }
       
+      if (!this.password) {
+        console.error('No stored password to compare with');
+        return false;
+      }
+      
+      console.log('Starting bcrypt comparison...');
       const isMatch = await bcrypt.compare(candidatePassword, this.password);
-      console.log('Password comparison result:', isMatch);
+      
+      console.log('=== PASSWORD COMPARISON RESULT ===');
+      console.log('Passwords match:', isMatch);
+      
+      if (!isMatch) {
+        console.log('Password comparison failed. Possible reasons:');
+        console.log('1. The provided password is incorrect');
+        console.log('2. The stored password hash is corrupted');
+        console.log('3. The password was not properly hashed when saved');
+      }
+      
       return isMatch;
     } catch (error) {
-      console.error('Error comparing passwords:', error);
+      console.error('=== PASSWORD COMPARISON ERROR ===');
+      console.error('Error details:', error);
       return false;
     }
   };

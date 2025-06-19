@@ -6,23 +6,23 @@ import {
   getMealsForUser,
   deleteUserProfile
 } from '../controllers/userProfileController.js';
-import { isAuthenticated } from '../middlewares/authMiddleware.js';
+import { protect } from '../middleware/authMiddleware.js';
 
 const router = express.Router();
 
 // Create a user profile
-router.post('/profile', isAuthenticated, createUserProfile);
+router.post('/profile', protect, createUserProfile);
 
 // Update existing user profile
-router.put('/profile', isAuthenticated, updateUserProfile);
+router.put('/profile', protect, updateUserProfile);
 
 // Gets a particular user's profile
-router.get('/profile', isAuthenticated, getUserProfile);
+router.get('/profile', protect, getUserProfile);
 
 //Deletes a user's profile
-router.delete('/profile', isAuthenticated, deleteUserProfile);
+router.delete('/profile', protect, deleteUserProfile);
 
 //Gets meals based on users's prference
-router.get('/meals', isAuthenticated, getMealsForUser);
+router.get('/meals', protect, getMealsForUser);
 
 export default router;

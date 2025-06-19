@@ -44,9 +44,9 @@ const validatePassword = (password) => {
 
 // Generate a secure, user-friendly temporary password
 const generateTemporaryPassword = () => {
-  const lowercase = 'abcdefghjkmnpqrstuvwxyz'; // No 'l' to avoid confusion with '1'
-  const uppercase = 'ABCDEFGHJKMNPQRSTUVWXYZ'; // No 'I', 'O' to avoid confusion with '1', '0'
-  const numbers = '23456789'; // No '0', '1' to avoid confusion with 'O', 'l'
+  const lowercase = 'abcdefghjkmnpqrstuvwxyz'; 
+  const uppercase = 'ABCDEFGHJKMNPQRSTUVWXYZ'; 
+  const numbers = '23456789'; 
   const symbols = '!@#$%^&*';
   
   // Ensure we have at least one character from each set
@@ -550,28 +550,20 @@ export const resetPassword = async (req, res, next) => {
       });
     }
     
-    // 6) Update password and reset temporary flags
-    // Hash the password manually before saving
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(newPassword, salt);
+    // 6) Update password and reset temporary flags using the model's save method
+    // This ensures all hooks are triggered correctly
+    console.log('Updating password for user:', user.id);
     
-    // Use direct SQL update to bypass any hooks that might interfere
-    await req.db.sequelize.query(
-      'UPDATE `Users` SET ' +
-      '`password` = ?, ' +
-      '`isTemporaryPassword` = FALSE, ' +
-      '`forcePasswordChange` = FALSE, ' +
-      '`temporaryPasswordExpires` = NULL, ' +
-      '`updatedAt` = NOW() ' +
-      'WHERE `id` = ?',
-      {
-        replacements: [hashedPassword, user.id],
-        type: 'UPDATE'
-      }
-    );
+    // Update the password - this will trigger the beforeUpdate hook
+    user.password = newPassword;
+    user.isTemporaryPassword = false;
+    user.forcePasswordChange = false;
+    user.temporaryPasswordExpires = null;
     
-    // Refresh the user object to get the latest data
-    await user.reload();
+    // Save the user - this will trigger the beforeUpdate hook to hash the password
+    await user.save();
+    
+    console.log('Password updated successfully for user:', user.id);
     
     // 7) Generate new token without forcePasswordChange flag
     const tokenPayload = {
@@ -646,28 +638,20 @@ export const changePassword = async (req, res, next) => {
       });
     }
     
-    // 6) Update password
-    // Hash the password manually before saving
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(newPassword, salt);
+    // 6) Update password using the model's save method
+    // This ensures all hooks are triggered correctly
+    console.log('Changing password for user:', user.id);
     
-    // Use direct SQL update to bypass any hooks that might interfere
-    await req.db.sequelize.query(
-      'UPDATE `Users` SET ' +
-      '`password` = ?, ' +
-      '`isTemporaryPassword` = FALSE, ' +
-      '`forcePasswordChange` = FALSE, ' +
-      '`temporaryPasswordExpires` = NULL, ' +
-      '`updatedAt` = NOW() ' +
-      'WHERE `id` = ?',
-      {
-        replacements: [hashedPassword, user.id],
-        type: 'UPDATE'
-      }
-    );
+    // Update the password - this will trigger the beforeUpdate hook
+    user.password = newPassword;
+    user.isTemporaryPassword = false;
+    user.forcePasswordChange = false;
+    user.temporaryPasswordExpires = null;
     
-    // Refresh the user object to get the latest data
-    await user.reload();
+    // Save the user - this will trigger the beforeUpdate hook to hash the password
+    await user.save();
+    
+    console.log('Password changed successfully for user:', user.id);
     
     // 7) Generate new token without forcePasswordChange flag
     const tokenPayload = {

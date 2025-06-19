@@ -54,10 +54,6 @@ const router = express.Router();
 router.use(addDbToRequest);
 router.use(checkDbConnection);
 
-// Add database middleware to all auth routes
-router.use(addDbToRequest);
-router.use(checkDbConnection);
-
 // Validation middleware
 const registerValidation = [
   body('username')
@@ -97,19 +93,8 @@ const emailValidation = [
 ];
 
 // Password validation - keep it simple and let the model handle complex validation
-const emailValidation = [
-  body('email')
-    .isEmail()
-    .withMessage('Please provide a valid email')
-];
-
-// Password validation - keep it simple and let the model handle complex validation
 const passwordValidation = [
   body('password')
-    .notEmpty()
-    .withMessage('Password is required')
-    .isString()
-    .withMessage('Password must be a string')
     .notEmpty()
     .withMessage('Password is required')
     .isString()

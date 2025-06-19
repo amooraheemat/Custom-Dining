@@ -68,7 +68,7 @@ const getFilteredMeals = async (req, res) => {
       whereClause.restaurantId = restaurantId;
     }
 
-    // Convert comma-separated strings to arrays if needed
+    // Convert comma-separated strings to arrays
     if (typeof dietaryTags === 'string') {
       dietaryTags = dietaryTags.split(',').map(tag => tag.trim().toLowerCase());
     }
@@ -77,12 +77,12 @@ const getFilteredMeals = async (req, res) => {
       excludeAllergens = excludeAllergens.split(',').map(allergen => allergen.trim().toLowerCase());
     }
 
-    // Filter by dietary tags if provided (MariaDB compatible)
+    // Filter by dietary tags
     if (dietaryTags && dietaryTags.length > 0) {
-      // For MariaDB, we'll use JSON_SEARCH which is more compatible
+      
       const tagConditions = dietaryTags.map(tag => {
         return req.db.sequelize.literal(
-          `JSON_SEARCH(LOWER(\`dietary_tags\`), 'one', LOWER('${tag.replace(/'/g, "''")}')) IS NOT NULL`
+          `JSON_CONTAINS(LOWER(\`Meal\`.\`dietaryTags\`), JSON_QUOTE(LOWER('${tag.replace(/'/g, "''")}')))`
         );
       });
       
@@ -92,7 +92,6 @@ const getFilteredMeals = async (req, res) => {
       });
     }
 
-    // Exclude meals with specified allergens (MariaDB compatible)
     if (excludeAllergens && excludeAllergens.length > 0) {
       // For each allergen, add a condition to check it's not in the allergens array
       excludeAllergens.forEach(allergen => {
@@ -109,16 +108,33 @@ const getFilteredMeals = async (req, res) => {
       whereClause[Op.and] = conditions;
     }
 
-    const meals = await req.db.Meal.findAll({
+    // First, get just the IDs to avoid circular references
+    const mealIds = await req.db.Meal.findAll({
+      attributes: ['id'],
       where: whereClause,
+      order: [['createdAt', 'DESC']],
+      raw: true
+    });
+
+    if (!mealIds.length) {
+      return res.status(200).json({ 
+        status: 'success',
+        message: 'No meals found matching your criteria.',
+        data: []
+      });
+    }
+
+    // Then fetch the full data with associations
+    const meals = await req.db.Meal.findAll({
+      where: {
+        id: mealIds.map(m => m.id)
+      },
       include: [{
         model: req.db.Restaurant,
         as: 'restaurant',
         attributes: ['id', 'name', 'location']
       }],
       order: [['createdAt', 'DESC']],
-      // No need for replacements since we're using template literals directly
-      // This avoids issues with parameter binding in raw queries
       raw: true,
       nest: true
     });
@@ -139,8 +155,17 @@ const getFilteredMeals = async (req, res) => {
         }
       };
       
-      return {
-        ...meal,
+      // Create a clean object with only the data we want to send
+      const cleanMeal = {
+        id: meal.id,
+        name: meal.name,
+        description: meal.description,
+        price: meal.price,
+        imageUrl: meal.imageUrl,
+        isAvailable: meal.isAvailable,
+        restaurantId: meal.restaurantId,
+        createdAt: meal.createdAt,
+        updatedAt: meal.updatedAt,
         dietaryTags: safeJsonParse(meal.dietaryTags, []),
         allergens: safeJsonParse(meal.allergens, []),
         nutritionalInfo: typeof meal.nutritionalInfo === 'object' 
@@ -151,8 +176,11 @@ const getFilteredMeals = async (req, res) => {
               } catch (e) {
                 return {};
               }
-            })()
+            })(),
+        restaurant: meal.restaurant
       };
+      
+      return cleanMeal;
     });
 
     if (processedMeals.length === 0) {
@@ -170,10 +198,14 @@ const getFilteredMeals = async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching meals:', error);
+    
+    // Extract a clean error message
+    const errorMessage = error.message || 'An unknown error occurred';
+    
     res.status(500).json({ 
       status: 'error',
       message: 'Failed to fetch meals',
-      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+      ...(process.env.NODE_ENV === 'development' && { error: errorMessage })
     });
   }
 };
@@ -212,7 +244,7 @@ const createMeal = async (req, res) => {
   const transaction = await req.db.sequelize.transaction();
   
   try {
-    const { name, description, price, imageUrl, dietaryTags, nutritionalInfo, allergens, restaurantId } = req.body;
+    const { name, description, price, dietaryTags, nutritionalInfo, allergens, restaurantId } = req.body;
     let targetRestaurantId = restaurantId;
     
     // For restaurant users, get their restaurant ID automatically
@@ -277,7 +309,6 @@ const createMeal = async (req, res) => {
       name,
       description,
       price,
-      imageUrl,
       dietaryTags: dietaryTags || [],
       nutritionalInfo: nutritionalInfo || {},
       allergens: allergens || [],

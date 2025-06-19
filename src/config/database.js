@@ -5,8 +5,6 @@ import path from 'path';
 
 dotenv.config();
 
-dotenv.config();
-
 const sequelize = new Sequelize(
   process.env.DB_NAME,
   process.env.DB_USER,
@@ -34,6 +32,7 @@ const sequelize = new Sequelize(
 import createUserModel from '../models/user.js';
 import createRestaurantModel from '../models/restaurant.js';
 import createMealModel from '../models/meal.js';
+import createUserProfileModel from '../models/userProfile.js';
 
 // Initialize models with sequelize instance
 const initModels = () => {
@@ -41,11 +40,61 @@ const initModels = () => {
   const Restaurant = createRestaurantModel(sequelize);
   const Meal = createMealModel(sequelize);
 
+  // Initialize UserProfile model
+  const UserProfile = createUserProfileModel(sequelize);
+  
+  UserProfile.init({
+    id: {
+      type: Sequelize.INTEGER,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+    userId: {
+      type: Sequelize.INTEGER,
+      allowNull: false,
+      unique: true,
+      references: {
+        model: User,
+        key: 'id',
+      },
+      onDelete: 'CASCADE',
+    },
+    healthGoal: {
+      type: Sequelize.STRING,
+      allowNull: true,
+    },
+    dietaryRestrictions: {
+      type: Sequelize.JSON,
+      allowNull: true,
+      defaultValue: [],
+    },
+    preferredMealTags: {
+      type: Sequelize.JSON,
+      allowNull: true,
+      defaultValue: [],
+    },
+  }, {
+    sequelize,
+    modelName: 'UserProfile',
+    tableName: 'user_profiles',
+    timestamps: true,
+  });
+
+  // Set up associations
+  User.hasOne(UserProfile, {
+    foreignKey: 'userId',
+    onDelete: 'CASCADE',
+  });
+  UserProfile.belongsTo(User, {
+    foreignKey: 'userId',
+  });
+
   // Store models in sequelize.models
   sequelize.models = {
     User,
     Restaurant,
-    Meal
+    Meal,
+    UserProfile
   };
 
   // Run .associate if it exists on the models

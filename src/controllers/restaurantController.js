@@ -62,6 +62,7 @@ import { sendAdminApprovalRequest, sendRestaurantApprovalEmail } from "../servic
  */
 
 // Create a new restaurant (pending admin approval)
+// Create a new restaurant (pending admin approval)
 export const createRestaurant = async (req, res, next) => {
   try {
     const { 
@@ -89,7 +90,7 @@ export const createRestaurant = async (req, res, next) => {
         message: 'Authentication required'
       });
     }
-
+    
     // Check if a restaurant with this email already exists 
     const existingRestaurant = await req.db.Restaurant.findOne({
       where: req.db.sequelize.where(
@@ -131,130 +132,105 @@ export const createRestaurant = async (req, res, next) => {
     // Determine if the requester is an admin
     const isAdmin = currentUser.role === 'admin';
     
-    // For admins, require userId in the request body. This is to ensure that the admin is creating a restaurant for a valid restaunrant user
-    let targetUser;
-    if (isAdmin) {
-      if (!req.body.userId) {
-        return res.status(400).json({
-          status: 'error',
-          message: 'userId is required when creating a restaurant as admin',
-          field: 'userId'
-        });
-      }
-      
-      // Find the target user who will own the restaurant
-      targetUser = await req.db.User.findOne({
-        where: {
-          id: req.body.userId,
-          role: 'restaurant' // Ensure the target user is a restaurant owner
-        }
-      });
-      
-      if (!targetUser) {
-        return res.status(404).json({
-          status: 'error',
-          message: 'Restaurant owner not found or not authorized to own a restaurant',
-          field: 'userId'
-        });
-      }
-    } else {
-      // For non-admin users, they can only create restaurants for themselves
-      targetUser = currentUser;
-    }
+    // For non-admin users, they can only create restaurants for themselves
+    const targetUserId = isAdmin ? (req.body.userId || currentUser.id) : currentUser.id;
     
     // Auto-approve if created by admin
     const status = isAdmin ? 'approved' : 'pending';
     const approvedBy = isAdmin ? currentUser.id : null;
     const approvedAt = isAdmin ? new Date() : null;
 
-    try {
-      // Create restaurant
-      const newRestaurant = await req.db.Restaurant.create({ 
-        name, 
-        location, 
-        description,
-        contactEmail: contactEmail.toLowerCase(), // Ensure email is lowercase
-        openingHours,
-        contactNumber,
-        website,
-        cuisineType,
-        capacity,
-        hasOutdoorSeating: hasOutdoorSeating || false,
-        hasParking: hasParking || false,
-        isVeganFriendly: isVeganFriendly || false,
-        isVegetarianFriendly: isVegetarianFriendly || false,
-        isGlutenFreeFriendly: isGlutenFreeFriendly || false,
-        isHalal: isHalal || false,
-        userId: targetUser.id,
-        status: status,
-        approvedBy: approvedBy,
-        approvedAt: isAdmin ? new Date() : null,
-        isActive: isAdmin
-      });
+    // Create the restaurant
+    const newRestaurant = await req.db.Restaurant.create({
+      name,
+      location,
+      description,
+      contactEmail: contactEmail.toLowerCase(),
+      openingHours,
+      contactNumber,
+      website,
+      cuisineType,
+      capacity,
+      hasOutdoorSeating: hasOutdoorSeating || false,
+      hasParking: hasParking || false,
+      isVeganFriendly: isVeganFriendly || false,
+      isVegetarianFriendly: isVegetarianFriendly || false,
+      isGlutenFreeFriendly: isGlutenFreeFriendly || false,
+      isHalal: isHalal || false,
+      userId: targetUserId,
+      status,
+      approvedBy,
+      approvedAt,
+      isActive: isAdmin // Auto-activate if created by admin
+    });
 
-      if (isAdmin) {
-        // Notify the admin who created the restaurant
-        await sendRestaurantApprovalEmail(targetUser, newRestaurant);
-        
-        //Response body
-        return res.status(201).json({
-          status: 'success',
-          message: 'Restaurant created and approved successfully',
-          data: {
-            restaurantId: newRestaurant.id,
-            restaurantName: newRestaurant.name,
-            restaurantEmail: newRestaurant.contactEmail,
-            restaurantContactNumber: newRestaurant.contactNumber,
-            restaurantOwner: newRestaurant.userId,
+    // Send appropriate response based on admin/restaurant user
+    if (isAdmin) {
+      // Notify the restaurant owner
+      await sendRestaurantApprovalEmail(currentUser, newRestaurant);
+      
+      return res.status(201).json({
+        status: 'success',
+        message: 'Restaurant created and approved successfully',
+        data: {
+          restaurant: {
+            id: newRestaurant.id,
+            name: newRestaurant.name,
+            contactEmail: newRestaurant.contactEmail,
+            status: newRestaurant.status,
+            isActive: newRestaurant.isActive
           }
-        });
-      } else {
-        // For non-admin users, notify admins for approval
-        const adminUsers = await req.db.User.findAll({ where: { role: 'admin' } });
-        
-        // Send notification to each admin
+        }
+      });
+    } else {
+      // For regular restaurant users, notify admins for approval
+      const adminUsers = await req.db.User.findAll({ 
+        where: { role: 'admin' },
+        attributes: ['id', 'email', 'username']
+      });
+      
+      // Send notification to each admin (fire and forget)
+      try {
         await Promise.all(adminUsers.map(admin => 
-          sendAdminApprovalRequest(admin, newRestaurant, targetUser)
+          sendAdminApprovalRequest(admin, newRestaurant, currentUser)
         ));
-        
-        return res.status(201).json({
-          status: 'success',
-          message: 'Restaurant created and pending approval',
-          data: {
-            restaurantId: newRestaurant.id,
-            restaurantName: newRestaurant.name,
-            restaurantEmail: newRestaurant.contactEmail,
-            restaurantContactNumber: newRestaurant.contactNumber,
-            restaurantOwner: newRestaurant.userId,
+      } catch (emailError) {
+        console.error('Failed to send admin approval email:', emailError);
+        // Continue even if email fails
+      }
+
+      return res.status(201).json({
+        status: 'success',
+        message: 'Restaurant created successfully and pending admin approval',
+        data: {
+          restaurant: {
+            id: newRestaurant.id,
+            name: newRestaurant.name,
+            contactEmail: newRestaurant.contactEmail,
+            status: newRestaurant.status,
+            isActive: newRestaurant.isActive
           }
-        });
-      }
-    } catch (error) {
-      console.error('Error creating restaurant:', error);
-      
-      // Handle validation errors
-      if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
-        const errors = error.errors ? error.errors.map(err => ({
-          field: err.path,
-          message: err.message
-        })) : [{ message: 'A validation error occurred' }];
-        
-        return res.status(400).json({
-          status: 'error',
-          message: 'Validation error',
-          errors: errors
-        });
-      }
-      
-      // Handle other errors
-      console.error('Unexpected error creating restaurant:', error);
-      return res.status(500).json({
-        status: 'error',
-        message: 'Failed to create restaurant',
-        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+        }
       });
     }
   } catch (error) {
+    console.error('Error creating restaurant:', error);
+    
+    // Handle validation errors
+    if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
+      const errors = error.errors ? error.errors.map(err => ({
+        field: err.path,
+        message: err.message
+      })) : [{ message: 'A validation error occurred' }];
+      
+      return res.status(400).json({
+        status: 'error',
+        message: 'Validation error',
+        errors: errors
+      });
+    }
+    
+    // Handle other errors
     next(error);
   }
 };
@@ -354,7 +330,6 @@ export const getRestaurantById = async (req, res, next) => {
           approvedByAdmin: restaurant.approvedByAdmin || null
         }
       }
-      
     };
     
     res.status(200).json(response);
@@ -402,158 +377,6 @@ export const getPendingRestaurants = async (req, res, next) => {
     res.status(200).json(response);
   } catch (error) {
     console.error('Error fetching pending restaurants:', error);
-    next(error);
-  }
-};
-
-// Admin: Approve or reject restaurant
-export const updateRestaurantStatus = async (req, res, next) => {
-  try {
-    const { id } = req.params;
-    const { status, rejectionReason } = req.body;
-    
-    // Validate status
-    if (!['approved', 'rejected'].includes(status)) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Status must be either "approved" or "rejected"',
-        errors: [{
-          field: 'status',
-          message: 'Must be either "approved" or "rejected"'
-        }]
-      });
-    }
-    
-    // Ensure rejection reason is provided when rejecting
-    if (status === 'rejected' && !rejectionReason) {
-      return res.status(400).json({
-        status: 'error',
-        message: 'Rejection reason is required when rejecting a restaurant',
-        errors: [{
-          field: 'rejectionReason',
-          message: 'Please provide a reason for rejection'
-        }]
-      });
-    }
-
-    // Find the restaurant
-    const restaurant = await req.db.Restaurant.findOne({
-      where: { 
-        id,
-        status: 'pending',
-        isActive: false
-      },
-      include: [{
-        model: req.db.User,
-        as: 'owner',
-        attributes: ['id', 'email'],
-        required: false
-      }]
-    });
-
-    if (!restaurant) {
-      return res.status(404).json({
-        status: 'error',
-        message: 'Restaurant not found or not pending approval'
-      });
-    }
-
-    // Update the restaurant table
-    restaurant.status = status;
-    restaurant.approvedBy = req.user.id;
-    restaurant.approvedByUsername = req.user.username;
-    restaurant.approvedAt = new Date();
-    restaurant.isActive = status === 'approved';
-    
-    if (status === 'rejected') {
-      restaurant.rejectionReason = rejectionReason;
-    }
-
-    await restaurant.save();
-
-    // If approved and owner exists, update their role to 'restaurant' if not already
-    if (status === 'approved' && restaurant.owner && restaurant.owner.role !== 'admin') {
-      restaurant.owner.role = 'restaurant';
-      await restaurant.owner.save();
-    }
-
-    // Send email notification to both restaurant contact email and owner's email if different
-    const emailRecipients = new Set();
-    
-    // Add restaurant contact email if it exists
-    if (restaurant.contactEmail) {
-      emailRecipients.add(restaurant.contactEmail);
-    }
-    
-    // Add owner's email if it exists and is different from contact email
-    if (restaurant.owner?.email && restaurant.owner.email !== restaurant.contactEmail) {
-      emailRecipients.add(restaurant.owner.email);
-    }
-
-    // Send email to all recipients
-    for (const email of emailRecipients) {
-      try {
-        // Create a user object with the required properties for the email
-        const recipientInfo = {
-          email: email,
-          username: email === restaurant.owner?.email 
-            ? (restaurant.owner.username || 'Restaurant Owner')
-            : 'Restaurant Contact',
-          status: restaurant.status,
-          rejectionReason: status === 'rejected' ? rejectionReason : undefined
-        };
-        
-        console.log(`Sending ${status} notification to:`, email);
-        
-        await sendRestaurantApprovalEmail(
-          recipientInfo,
-          restaurant
-        );
-      } catch (emailError) {
-        console.error(`Error sending email to ${email}:`, emailError);
-        // Continue to next recipient even if one fails
-      }
-    }
-
-    // Response body
-    res.status(200).json({
-      status: 'success',
-      message: `Restaurant ${status} successfully`,
-      data: {
-        restaurant: {
-          id: restaurant.id,
-          name: restaurant.name,
-          status: restaurant.status,
-          isActive: restaurant.isActive,
-          approvedAt: restaurant.approvedAt,
-          approvedBy: restaurant.approvedBy,
-          approvedByUsername: restaurant.approvedByUsername,
-          rejectionReason: restaurant.rejectionReason,
-          owner: restaurant.owner ? {
-            id: restaurant.owner.id,
-            email: restaurant.owner.email,
-            username: restaurant.owner.username
-          } : null
-        }
-      }
-    });
-  } catch (error) {
-    console.error('Error updating restaurant status:', error);
-    
-    // Handle validation errors
-    if (error.name === 'SequelizeValidationError' || error.name === 'SequelizeUniqueConstraintError') {
-      const errors = error.errors ? error.errors.map(err => ({
-        field: err.path,
-        message: err.message
-      })) : [{ message: 'A validation error occurred' }];
-      
-      return res.status(400).json({
-        status: 'error',
-        message: 'Validation error',
-        errors: errors
-      });
-    }
-    
     next(error);
   }
 };
