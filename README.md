@@ -1,10 +1,20 @@
-# 🍽️ Custom-Dining - Health-Focused Restaurant Companion
+
+# 🍽️ Custom Dining - Health-Focused Restaurant Companion
 
 **Empowering Nigerians with dietary restrictions to dine out safely and confidently.**
 
 
 [![Postman](https://img.shields.io/badge/API-Postman-orange)](https://www.postman.com/)
 [![Figma](https://img.shields.io/badge/Design-Figma-purple)](https://figma.com/)
+
+## Features
+
+- User Authentication & Authorization
+- Restaurant Management
+- Meal Management
+- Dietary Preferences
+- Favorites System
+- Admin Controls
 
 ## 📌 Table of Contents
 - [Features](#-features)
@@ -32,21 +42,45 @@
 ## 🛠️ Tech Stack
 | Layer          | Technology               |
 |----------------|--------------------------|
-| **Frontend**   | HTML + CSS               |
+| **Frontend**   | Reactjs                  |
 | **Backend**    | Node.js + Express        |
 | **Database**   | MySQL                    |
 | **Auth**       | JWT Tokens               |
 | **Designer**   | Figma                    |
 
+## Prerequisites
+
+- Node.js (v14 or higher)
+- MySQL (v8 or higher)
+- npm or yarn
+
 ## 🚀 Installation
 ### Backend Setup
 ```bash
 # Clone repo
-git clone https://github.com/amooraheemat/Custom-Dining.git
 cd backend
 
-# Install dependencies
-npm install
+1. Clone the repository
+git clone https://github.com/amooraheemat/Custom-Dining.git
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Copy `.env.example` to `.env` and update the values:
+   ```bash
+   cp .env.example .env
+   ```
+4. Create the MySQL database:
+   ```sql
+   CREATE DATABASE custom_dining_db;
+   ```
+5. Start the development server:
+   ```bash
+   node src/app.js
+   ```
 
-# Run server
-npm start
+
+
+# Custom Dining API
+
+A RESTful API for dietary-specific restaurant discovery and meal management.
