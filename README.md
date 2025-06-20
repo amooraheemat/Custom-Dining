@@ -4,11 +4,17 @@
 A simple web application to help people find restaurants that cater to specific dietary needs.
 
 ## Table of Contents
-- [Features](#features)
-- [Technologies Used](#technologies-used)
-- [Setup Instructions](#setup-instructions)
-- [How to Run](#how-to-run)
-- [Project Structure](#project-structure)
+- [Custom Dining - Restaurant Finder App](#custom-dining---restaurant-finder-app)
+  - [Table of Contents](#table-of-contents)
+  - [Features](#features)
+  - [Technologies Used](#technologies-used)
+  - [Setup Instructions](#setup-instructions)
+  - [How to Run](#how-to-run)
+  - [Project Structure](#project-structure)
+  - [How It Works](#how-it-works)
+  - [Future Improvements](#future-improvements)
+  - [Note for Instructor](#note-for-instructor)
+  - [Collaborators for the Custom Dining API](#collaborators-for-the-custom-dining-api)
 
 ## Features
 
@@ -89,3 +95,9 @@ A simple web application to help people find restaurants that cater to specific 
 ## Note for Instructor
 
 This project was developed as part of my learning journey with Node.js and Express. I've tried to keep the code simple and easy to understand.
+
+## Collaborators for the Custom Dining API
+1. Ridwan Abdulazeez (Team Lead)
+2. Amoo Raheemat Omotayo
+3. Gideon Oluwatumininu Okunogbe
+4. Nwankwo Jonathan
