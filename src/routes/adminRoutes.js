@@ -1,12 +1,16 @@
 import express from 'express';
-import { approveRestaurant, rejectRestaurant } from '../controllers/adminController.js';
+import { 
+  updateRestaurantStatus,
+  getAllUsers 
+} from '../controllers/adminController.js';
 import { protect } from '../middleware/authMiddleware.js';
-
 
 const router = express.Router();
 
-router.patch('/approve/:id', protect, approveRestaurant);
+// Get all users with pagination
+router.get('/users', protect, getAllUsers);
 
-router.patch('/reject/:id', protect, rejectRestaurant);
+// Update restaurant status (approve/reject)
+router.patch('/restaurants/:id/status', protect, updateRestaurantStatus);
 
 export default router;

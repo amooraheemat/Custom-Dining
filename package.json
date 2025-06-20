@@ -1,36 +1,41 @@
 {
   "name": "custom-dining",
   "version": "1.0.0",
-  "description": "Custom Dining Backend API",
-  "homepage": "https://github.com/amooraheemat/Custom-Dining#readme",
-  "bugs": {
-    "url": "https://github.com/amooraheemat/Custom-Dining/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/amooraheemat/Custom-Dining.git"
-  },
-  "license": "ISC",
-  "author": "Group 11 Backend Engineers",
-  "type": "module",
+  "description": "A simple restaurant finder app for people with dietary restrictions",
   "main": "src/app.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node src/app.js",
+    "dev": "nodemon src/app.js",
+    "setup-db": "node setup-db.js",
+    "seed": "node seed.js",
+    "migrate": "node scripts/run-migration.js",
+    "migrate:create": "node --loader ts-node/esm ./node_modules/.bin/sequelize migration:generate --name",
+    "migrate:undo": "node --loader ts-node/esm ./node_modules/.bin/sequelize db:migrate:undo",
+    "migrate:undo:all": "node --loader ts-node/esm ./node_modules/.bin/sequelize db:migrate:undo:all"
   },
   "dependencies": {
+    "bcrypt": "^6.0.0",
     "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.6",
     "cors": "^2.8.5",
-    "dotenv": "^16.0.3",
+    "dotenv": "^16.5.0",
+    "esm": "^3.2.25",
     "express": "^4.18.2",
-    "express-validator": "^7.0.1",
+    "express-validator": "^7.2.1",
+    "html-to-text": "^9.0.5",
     "jsonwebtoken": "^9.0.0",
-    "mysql2": "^3.3.1",
+    "juice": "^11.0.1",
+    "mysql2": "^3.14.1",
     "nodemailer": "^7.0.3",
+    "pug": "^3.0.3",
     "sequelize": "^6.31.1",
     "swagger-jsdoc": "^6.2.8",
-    "swagger-ui-express": "^4.6.3"
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
-    "nodemon": "^2.0.22"
+    "nodemon": "^2.0.22",
+    "sequelize-cli": "^6.6.3",
+    "ts-node": "^10.9.2"
   }
 }

@@ -1,6 +1,9 @@
+# Dependencies
 node_modules/
 package-lock.json
-yarn.lock
+
+# Environment variables
 .env
-.DS_Store
-Thumbs.db
+
+# Logs
+*.log

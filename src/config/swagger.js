@@ -6,14 +6,18 @@ const options = {
     info: {
       title: 'Custom Dining API',
       version: '1.0.0',
-      description: 'API for dietary-specific restaurant discovery',
+      description: 'API for Custom Dining application',
     },
     servers: [
       {
-        url: 'http://localhost:3006',
+        url: 'http://localhost:3006/api',
         description: 'Development server',
       },
     ],
+    basePath: '/',
+    schemes: ['http'],
+    consumes: ['application/json'],
+    produces: ['application/json'],
     components: {
       securitySchemes: {
         bearerAuth: {

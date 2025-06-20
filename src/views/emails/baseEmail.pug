@@ -1,0 +1,55 @@
+doctype html
+html
+  head
+    meta(charset='UTF-8')
+    meta(name='viewport', content='width=device-width, initial-scale=1.0')
+    title= subject
+    style.
+      body {
+        font-family: Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .header {
+        text-align: center;
+        padding: 20px 0;
+        border-bottom: 1px solid #eee;
+      }
+      .content {
+        padding: 20px 0;
+      }
+      .footer {
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #eee;
+        font-size: 0.9em;
+        color: #777;
+      }
+      .button {
+        display: inline-block;
+        padding: 10px 20px;
+        margin: 15px 0;
+        background-color: #4CAF50;
+        color: white !important;
+        text-decoration: none;
+        border-radius: 4px;
+      }
+      .code {
+        font-family: monospace;
+        background: #f4f4f4;
+        padding: 10px 15px;
+        border-radius: 4px;
+        display: inline-block;
+        margin: 10px 0;
+      }
+  body
+    .header
+      h1= subject
+    .content
+      block content
+    .footer
+      p This email was sent from Custom Dining. Please do not reply to this email.
+      p © #{new Date().getFullYear()} Custom Dining. All rights reserved.
