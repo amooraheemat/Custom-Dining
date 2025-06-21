@@ -6,6 +6,34 @@ import Email from '../utils/email.js';
 import { 
   sendVerificationEmail
 } from '../services/emailService.js';
+
+// @desc    Logout user / clear cookie
+// @route   POST /auth/logout
+// @access  Public
+export const logout = (req, res) => {
+  try {
+    // Clear the token cookie
+    res.cookie('token', 'none', {
+      expires: new Date(Date.now() + 10 * 1000), // Expires in 10 seconds
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'strict'
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'User logged out successfully'
+    });
+  } catch (error) {
+    console.error('Logout error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error logging out',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+  }
+};
+
 const validatePassword = (password) => {
   const errors = [];
   
@@ -197,8 +225,15 @@ export const login = async (req, res, next) => {
       });
     }
 
-    // Find user
-    const user = await req.db.User.findOne({ where: { email } });
+    // Find user with profile
+    const user = await req.db.User.findOne({
+      where: { email },
+      include: [{
+        model: req.db.UserProfile,
+        as: 'profile',
+        required: false
+      }]
+    });
 
     if (!user || !(await user.comparePassword(password))) {
       return res.status(401).json({
@@ -245,6 +280,7 @@ export const login = async (req, res, next) => {
         status: 'success',
         token,
         forcePasswordChange: true,
+        hasUserProfile: !!user.profile,
         message: 'Please change your temporary password.'
       });
     }
@@ -252,7 +288,8 @@ export const login = async (req, res, next) => {
     res.status(200).json({
       status: 'success',
       token,
-      forcePasswordChange: false
+      forcePasswordChange: false,
+      hasUserProfile: !!user.profile
     });
   } catch (error) {
     next(error);
