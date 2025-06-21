@@ -7,7 +7,8 @@ import {
   resetPassword,
   changePassword,
   verifyEmail,
-  resendVerificationEmail
+  resendVerificationEmail,
+  logout
 } from '../controllers/authController.js';
 import { protect, authorize } from '../middleware/authMiddleware.js';
 import { db } from '../config/database.js';
