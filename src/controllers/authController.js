@@ -19,6 +19,7 @@ export const logout = (req, res) => {
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict'
     });
+    
 
     res.status(200).json({
       success: true,
@@ -289,7 +290,8 @@ export const login = async (req, res, next) => {
       status: 'success',
       token,
       forcePasswordChange: false,
-      hasUserProfile: !!user.profile
+      hasUserProfile: !!user.profile,
+      role: user.role,
     });
   } catch (error) {
     next(error);

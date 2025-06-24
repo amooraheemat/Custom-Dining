@@ -55,6 +55,9 @@ const router = express.Router();
 router.use(addDbToRequest);
 router.use(checkDbConnection);
 
+// Public routes
+router.post('/logout', logout);
+
 // Validation middleware
 const registerValidation = [
   body('username')
@@ -110,6 +113,8 @@ const changePasswordValidation = [
     .notEmpty()
     .withMessage('Please enter your current password'),
 ];
+
+
 
 // Public routes
 /**
@@ -574,7 +579,7 @@ router.post('/forgot-password', forgotPassword);
  * @swagger
  * /auth/reset-password/{token}:
  *   post:
- *     summary: Reset password
+ *     summary: Reset password (deprecated, use POST /auth/reset-password instead)
  *     tags: [Authentication]
  *     parameters:
  *       - in: path
@@ -650,6 +655,31 @@ router.post('/change-password', protect, changePasswordValidation, changePasswor
 
 /**
  * @swagger
+ * /auth/logout:
+ *   post:
+ *     summary: Logout user
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully logged out
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: User logged out successfully
+ */
+router.post('/logout', protect, logout);
+
+/**
+ * @swagger
  * /auth/test-auth:
  *   get:
  *     summary: Test protected route
@@ -691,6 +721,31 @@ router.get('/admin-only', protect, authorize('admin'), (req, res) => {
     user: req.user
   });
 });
+
+/**
+ * @swagger
+ * /auth/logout:
+ *   post:
+ *     summary: Logout user
+ *     tags: [Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully logged out
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: User logged out successfully
+ */
+router.post('/logout', protect, logout);
 
 // Handle method not allowed for all auth routes
 router.all('*', (req, res, next) => {
